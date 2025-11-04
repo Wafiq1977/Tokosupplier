@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${product.name + ' - SAVORA'}">Product Detail - SAVORA</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+                <div class="logo-gradient me-2">
+                    <i class="fas fa-leaf fa-2x"></i>
+                </div>
+                <span class="fw-bold text-gradient">SAVORA</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">Beranda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#products">Produk</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#categories">Kategori</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span sec:authentication="principal.username"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" th:href="@{/dashboard}">Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post" style="display: inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                    <button type="submit" class="dropdown-item">Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link" th:href="@{/login}">Login</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="btn btn-primary ms-2" th:href="@{/register}">Daftar</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div th:if="${product != null}" class="row">
+            <!-- Product Images -->
+            <div class="col-lg-6">
+                <div class="product-image mb-4">
+                    <img th:src="${product.imageUrl != null ? product.imageUrl : '/images/product-placeholder.jpg'}"
+                         alt="Product Image" class="img-fluid rounded shadow" id="mainImage">
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="col-lg-6">
+                <div class="product-info">
+                    <h1 class="mb-3" th:text="${product.name}"></h1>
+
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2" th:text="${product.category.name}"></span>
+                        <small class="text-muted">Supplier: <span th:text="${product.supplier.companyName}"></span></small>
+                    </div>
+
+                    <div class="price-section mb-4">
+                        <h2 class="text-primary fw-bold" th:text="'Rp ' + ${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}"></h2>
+                        <small class="text-muted">per unit</small>
+                    </div>
+
+                    <div class="stock-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-warehouse me-2 text-success"></i>
+                            <span th:if="${product.stock > 10}" class="text-success">Stok tersedia</span>
+                            <span th:if="${product.stock <= 10 and product.stock > 0}" class="text-warning">Stok terbatas</span>
+                            <span th:if="${product.stock == 0}" class="text-danger">Stok habis</span>
+                            <span class="ms-2 badge" th:classappend="${product.stock > 10 ? 'bg-success' : (product.stock > 0 ? 'bg-warning' : 'bg-danger')}"
+                                  th:text="${product.stock} + ' unit'"></span>
+                        </div>
+                    </div>
+
+                    <div class="description mb-4">
+                        <h5>Deskripsi Produk</h5>
+                        <p th:text="${product.description}"></p>
+                    </div>
+
+                    <!-- Add to Cart Form -->
+                    <div th:if="${product.stock > 0}" class="add-to-cart-section">
+                        <form th:action="@{/cart/add}" method="post" class="d-flex align-items-center gap-3">
+                            <input type="hidden" name="productId" th:value="${product.id}" />
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                            <div class="input-group" style="width: 150px;">
+                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(-1)">-</button>
+                                <input type="number" class="form-control text-center" id="quantity" name="quantity"
+                                       value="1" min="1" th:max="${product.stock}" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(1)">+</button>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-cart-plus me-2"></i>Tambah ke Keranjang
+                            </button>
+                        </form>
+                    </div>
+
+                    <div th:if="${product.stock == 0}" class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Produk ini sedang tidak tersedia
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Ulasan Produk</h5>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                            <i class="fas fa-star me-1"></i>Tulis Ulasan
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${product.reviews != null and !product.reviews.isEmpty()}" th:each="review : ${product.reviews}" class="review-item mb-4 pb-4 border-bottom">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <img th:src="${review.buyer.profileImageUrl != null ? review.buyer.profileImageUrl : '/images/avatar-placeholder.jpg'}"
+                                         alt="User Avatar" class="rounded-circle" style="width: 40px; height: 40px;">
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1" th:text="${review.buyer.companyName}"></h6>
+                                            <div class="rating mb-2">
+                                                <span th:each="i : ${#numbers.sequence(1, 5)}"
+                                                      th:class="'fas fa-star ' + (${i <= review.rating} ? 'text-warning' : 'text-muted')"></span>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted" th:text="${#temporals.format(review.createdAt, 'dd MMM yyyy')}"></small>
+                                    </div>
+                                    <p class="mb-0" th:text="${review.comment}"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div th:if="${product.reviews == null or product.reviews.isEmpty()}" class="text-center py-4">
+                            <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Belum ada ulasan</h6>
+                            <p class="text-muted">Jadilah yang pertama memberikan ulasan untuk produk ini.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tulis Ulasan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/reviews/add}" method="post">
+                    <div class="modal-body">
+                        <input type="hidden" name="productId" th:value="${product.id}" />
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Rating</label>
+                            <div class="rating-input">
+                                <input type="hidden" name="rating" id="ratingValue" value="5" />
+                                <div class="stars">
+                                    <i class="fas fa-star" data-rating="1"></i>
+                                    <i class="fas fa-star" data-rating="2"></i>
+                                    <i class="fas fa-star" data-rating="3"></i>
+                                    <i class="fas fa-star" data-rating="4"></i>
+                                    <i class="fas fa-star" data-rating="5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Komentar</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="4"
+                                      placeholder="Bagikan pengalaman Anda dengan produk ini..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Kirim Ulasan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="logo-gradient me-2">
+                            <i class="fas fa-leaf fa-2x text-white"></i>
+                        </div>
+                        <span class="h5 fw-bold text-white">SAVORA</span>
+                    </div>
+                    <p class="mb-0">Platform terpercaya untuk supplier bahan baku UMKM di Indonesia.</p>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Perusahaan</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#about" class="text-light text-decoration-none">Tentang Kami</a></li>
+                        <li><a href="#contact" class="text-light text-decoration-none">Kontak</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Layanan</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#suppliers" class="text-light text-decoration-none">Supplier</a></li>
+                        <li><a href="#buyers" class="text-light text-decoration-none">Pembeli</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Bantuan</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#faq" class="text-light text-decoration-none">FAQ</a></li>
+                        <li><a href="#terms" class="text-light text-decoration-none">Syarat & Ketentuan</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Ikuti Kami</h5>
+                    <div class="d-flex">
+                        <a href="#" class="text-light me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2024 SAVORA. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">Made with <i class="fas fa-heart text-danger"></i> for UMKM Indonesia</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/main.js}"></script>
+
+    <script>
+        function changeQuantity(delta) {
+            const input = document.getElementById('quantity');
+            let currentValue = parseInt(input.value);
+            let newValue = currentValue + delta;
+            const max = parseInt(input.getAttribute('max')) || 99;
+            const min = parseInt(input.getAttribute('min')) || 1;
+
+            if (newValue >= min && newValue <= max) {
+                input.value = newValue;
+            }
+        }
+
+        // Rating stars interaction
+        document.querySelectorAll('.stars i').forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = this.getAttribute('data-rating');
+                document.getElementById('ratingValue').value = rating;
+
+                // Update star display
+                document.querySelectorAll('.stars i').forEach((s, index) => {
+                    if (index < rating) {
+                        s.classList.add('text-warning');
+                        s.classList.remove('text-muted');
+                    } else {
+                        s.classList.remove('text-warning');
+                        s.classList.add('text-muted');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

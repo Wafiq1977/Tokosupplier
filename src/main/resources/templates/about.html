@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tentang Kami - SAVORA</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+                <div class="logo-gradient me-2">
+                    <i class="fas fa-leaf fa-2x"></i>
+                </div>
+                <span class="fw-bold text-gradient">SAVORA</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">Beranda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#products">Produk</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#categories">Kategori</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#about">Tentang</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/login}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary ms-2" th:href="@{/register}">Daftar</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-75">
+                <div class="col-lg-6 slide-in-left">
+                    <h1 class="display-4 fw-bold text-white mb-4">
+                        Tentang <span class="text-gradient-fresh">SAVORA</span>
+                    </h1>
+                    <p class="lead text-white-50 mb-4">
+                        Platform terpercaya yang menghubungkan UMKM Indonesia dengan supplier bahan baku berkualitas tinggi sejak 2024.
+                    </p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="#mission" class="btn btn-light btn-lg px-4">
+                            <i class="fas fa-bullseye me-2"></i>Misi Kami
+                        </a>
+                        <a href="#team" class="btn btn-outline-light btn-lg px-4">
+                            <i class="fas fa-users me-2"></i>Tim Kami
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6 slide-in-right">
+                    <div class="hero-image float">
+                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="About SAVORA" class="img-fluid rounded-3 shadow">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-shape"></div>
+    </section>
+
+    <!-- Mission Section -->
+    <section id="mission" class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="display-5 fw-bold text-gradient mb-3">Misi & Visi Kami</h2>
+                    <p class="lead text-muted">Bermitra untuk kemajuan UMKM Indonesia</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary rounded-circle p-3 me-3">
+                                    <i class="fas fa-eye fa-2x text-white"></i>
+                                </div>
+                                <h4 class="mb-0">Visi</h4>
+                            </div>
+                            <p class="text-muted">
+                                Menjadi platform terdepan dalam ekosistem UMKM Indonesia yang menghubungkan pelaku usaha dengan pemasok bahan baku berkualitas, mendorong pertumbuhan ekonomi lokal dan meningkatkan daya saing UMKM di pasar global.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-success rounded-circle p-3 me-3">
+                                    <i class="fas fa-bullseye fa-2x text-white"></i>
+                                </div>
+                                <h4 class="mb-0">Misi</h4>
+                            </div>
+                            <ul class="text-muted list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Menyediakan platform yang mudah digunakan untuk supplier dan pembeli</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Menjamin kualitas bahan baku melalui verifikasi supplier</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Mendorong transparansi harga dan kualitas produk</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Membangun komunitas UMKM yang saling mendukung</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6 text-center">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-users text-primary"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 class="stats-number">10,000+</h3>
+                            <p class="stats-label">UMKM Terdaftar</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 text-center">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-store text-success"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 class="stats-number">500+</h3>
+                            <p class="stats-label">Supplier Terverifikasi</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 text-center">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-box text-warning"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 class="stats-number">50,000+</h3>
+                            <p class="stats-label">Produk Tersedia</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 text-center">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-star text-info"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 class="stats-number">4.8</h3>
+                            <p class="stats-label">Rating Rata-rata</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="display-5 fw-bold text-gradient mb-3">Tim Kami</h2>
+                    <p class="lead text-muted">Orang-orang di balik kesuksesan SAVORA</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card text-center border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80" class="rounded-circle mb-3" alt="CEO" style="width: 120px; height: 120px; object-fit: cover;">
+                            <h5 class="card-title">Ahmad Rahman</h5>
+                            <p class="text-primary mb-2">CEO & Founder</p>
+                            <p class="card-text text-muted">Berpengalaman 15+ tahun di bidang e-commerce dan UMKM Indonesia.</p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="#" class="text-muted"><i class="fab fa-linkedin"></i></a>
+                                <a href="#" class="text-muted"><i class="fab fa-twitter"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card text-center border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80" class="rounded-circle mb-3" alt="CTO" style="width: 120px; height: 120px; object-fit: cover;">
+                            <h5 class="card-title">Sari Dewi</h5>
+                            <p class="text-primary mb-2">Chief Technology Officer</p>
+                            <p class="card-text text-muted">Expert dalam pengembangan platform digital dan teknologi cloud.</p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="#" class="text-muted"><i class="fab fa-github"></i></a>
+                                <a href="#" class="text-muted"><i class="fab fa-linkedin"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card text-center border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80" class="rounded-circle mb-3" alt="CMO" style="width: 120px; height: 120px; object-fit: cover;">
+                            <h5 class="card-title">Budi Santoso</h5>
+                            <p class="text-primary mb-2">Chief Marketing Officer</p>
+                            <p class="card-text text-muted">Spesialis dalam pemasaran digital dan pengembangan bisnis UMKM.</p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="#" class="text-muted"><i class="fab fa-instagram"></i></a>
+                                <a href="#" class="text-muted"><i class="fab fa-facebook"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Values Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="display-5 fw-bold text-gradient mb-3">Nilai-Nilai Kami</h2>
+                    <p class="lead text-muted">Prinsip yang menjadi dasar setiap keputusan kami</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="mt-3">Integritas</h5>
+                        <p class="text-muted">Kami berkomitmen untuk transparan dan jujur dalam setiap interaksi.</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-handshake fa-3x text-success"></i>
+                        </div>
+                        <h5 class="mt-3">Kolaborasi</h5>
+                        <p class="text-muted">Bermitra dengan UMKM untuk mencapai kesuksesan bersama.</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-lightbulb fa-3x text-warning"></i>
+                        </div>
+                        <h5 class="mt-3">Inovasi</h5>
+                        <p class="text-muted">Terus berinovasi untuk memberikan solusi terbaik bagi pengguna.</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-heart fa-3x text-danger"></i>
+                        </div>
+                        <h5 class="mt-3">Dedikasi</h5>
+                        <p class="text-muted">Berdedikasi penuh untuk kemajuan UMKM Indonesia.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section py-5 bg-gradient">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2 class="display-5 fw-bold text-white mb-4">Bergabung Bersama Kami</h2>
+                    <p class="lead text-white-50 mb-4">
+                        Jadilah bagian dari revolusi UMKM Indonesia. Mari bersama-sama membangun ekosistem yang lebih kuat dan berkelanjutan.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/register" class="btn btn-light btn-lg px-4">
+                            <i class="fas fa-rocket me-2"></i>Mulai Sekarang
+                        </a>
+                        <a href="#contact" class="btn btn-outline-light btn-lg px-4">
+                            <i class="fas fa-envelope me-2"></i>Hubungi Kami
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="logo-gradient me-2">
+                            <i class="fas fa-leaf fa-2x text-white"></i>
+                        </div>
+                        <span class="h5 fw-bold text-white">SAVORA</span>
+                    </div>
+                    <p class="mb-0">Platform terpercaya untuk supplier bahan baku UMKM di Indonesia. Menghubungkan pelaku usaha dengan pemasok berkualitas.</p>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Perusahaan</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#about" class="text-light text-decoration-none">Tentang Kami</a></li>
+                        <li><a href="#contact" class="text-light text-decoration-none">Kontak</a></li>
+                        <li><a href="#careers" class="text-light text-decoration-none">Karir</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Layanan</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#suppliers" class="text-light text-decoration-none">Supplier</a></li>
+                        <li><a href="#buyers" class="text-light text-decoration-none">Pembeli</a></li>
+                        <li><a href="#support" class="text-light text-decoration-none">Dukungan</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Bantuan</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#faq" class="text-light text-decoration-none">FAQ</a></li>
+                        <li><a href="#terms" class="text-light text-decoration-none">Syarat & Ketentuan</a></li>
+                        <li><a href="#privacy" class="text-light text-decoration-none">Kebijakan Privasi</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 mb-4">
+                    <h5 class="mb-3">Ikuti Kami</h5>
+                    <div class="d-flex">
+                        <a href="#" class="text-light me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2024 SAVORA. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">Made with <i class="fas fa-heart text-danger"></i> for UMKM Indonesia</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

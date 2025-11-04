@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analitik Supplier - SAVORA</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+                <div class="logo-gradient me-2">
+                    <i class="fas fa-leaf fa-2x"></i>
+                </div>
+                <span class="fw-bold text-gradient">SAVORA</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">Beranda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/supplier/dashboard}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/analytics/supplier}">Analitik</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span sec:authentication="principal.username"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" th:href="@{/supplier/dashboard}">Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post" style="display: inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                    <button type="submit" class="dropdown-item">Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <h1 class="mb-4">Analitik Penjualan</h1>
+
+        <!-- Date Range Filter -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h6 class="mb-0">Pilih Periode Analisis</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" id="periodSelect">
+                                <option value="7">7 Hari Terakhir</option>
+                                <option value="30" selected>30 Hari Terakhir</option>
+                                <option value="90">3 Bulan Terakhir</option>
+                                <option value="365">1 Tahun Terakhir</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm" onclick="updateAnalytics()">
+                                <i class="fas fa-sync-alt me-1"></i>Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="stats-icon mb-3">
+                            <i class="fas fa-shopping-cart fa-2x text-primary"></i>
+                        </div>
+                        <h3 class="stats-number" th:text="${analytics.get('totalOrders')}"></h3>
+                        <p class="stats-label text-muted">Total Pesanan</p>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            <span th:text="${analytics.get('orderGrowthPercent') != null ? analytics.get('orderGrowthPercent') : 0}"></span>% dari bulan lalu
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="stats-icon mb-3">
+                            <i class="fas fa-dollar-sign fa-2x text-success"></i>
+                        </div>
+                        <h3 class="stats-number" th:text="'Rp ' + ${#numbers.formatDecimal(analytics.get('totalRevenue'), 0, 'COMMA', 0, 'POINT')}"></h3>
+                        <p class="stats-label text-muted">Total Pendapatan</p>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            <span th:text="${analytics.get('revenueGrowthPercent') != null ? analytics.get('revenueGrowthPercent') : 0}"></span>% dari bulan lalu
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="stats-icon mb-3">
+                            <i class="fas fa-users fa-2x text-info"></i>
+                        </div>
+                        <h3 class="stats-number" th:text="${analytics.get('totalCustomers')}"></h3>
+                        <p class="stats-label text-muted">Total Pembeli</p>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            <span th:text="${analytics.get('customerGrowthPercent') != null ? analytics.get('customerGrowthPercent') : 0}"></span>% dari bulan lalu
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="stats-icon mb-3">
+                            <i class="fas fa-star fa-2x text-warning"></i>
+                        </div>
+                        <h3 class="stats-number" th:text="${analytics.get('averageRating') != null ? #numbers.formatDecimal(analytics.get('averageRating'), 1, 1) : '0.0'}"></h3>
+                        <p class="stats-label text-muted">Rating Rata-rata</p>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            <span th:text="${analytics.get('ratingGrowthPercent') != null ? analytics.get('ratingGrowthPercent') : 0}"></span>% dari bulan lalu
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+            <!-- Sales Trend Chart -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Trend Penjualan</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="salesChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Status Distribution -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Status Pesanan</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="orderStatusChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Performance -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Performa Produk</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Produk</th>
+                                        <th>Terjual</th>
+                                        <th>Pendapatan</th>
+                                        <th>Rating</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="product : ${analytics.get('topProducts')}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img th:src="${product.imageUrl != null ? product.imageUrl : '/images/product-placeholder.jpg'}"
+                                                     alt="Product" class="rounded me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-0" th:text="${product.name}"></h6>
+                                                    <small class="text-muted" th:text="'Rp ' + ${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}"></small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td th:text="${product.salesCount != null ? product.salesCount : 0}"></td>
+                                        <td th:text="'Rp ' + ${#numbers.formatDecimal(product.revenue, 0, 'COMMA', 0, 'POINT')}"></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span th:text="${product.averageRating != null ? #numbers.formatDecimal(product.averageRating, 1, 1) : '0.0'}"></span>
+                                                <i class="fas fa-star text-warning ms-1"></i>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span th:if="${product.salesTrend > 0}" class="badge bg-success">
+                                                <i class="fas fa-arrow-up me-1"></i><span th:text="${product.salesTrend}"></span>%
+                                            </span>
+                                            <span th:if="${product.salesTrend < 0}" class="badge bg-danger">
+                                                <i class="fas fa-arrow-down me-1"></i><span th:text="${Math.abs(product.salesTrend)}"></span>%
+                                            </span>
+                                            <span th:if="${product.salesTrend == 0}" class="badge bg-secondary">
+                                                <i class="fas fa-minus me-1"></i>0%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Insights -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Lokasi Pembeli</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="customerLocationChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Waktu Pembelian Terbaik</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="purchaseTimeChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2024 SAVORA. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">Made with <i class="fas fa-heart text-danger"></i> for UMKM Indonesia</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/main.js}"></script>
+
+    <script>
+        // Sample data - in real implementation, this would come from the backend
+        const salesData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: [12000000, 19000000, 15000000, 25000000, 22000000, 30000000],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        };
+
+        const orderStatusData = {
+            labels: ['Selesai', 'Dikirim', 'Diproses', 'Pending'],
+            datasets: [{
+                data: [45, 25, 20, 10],
+                backgroundColor: [
+                    'rgb(40, 167, 69)',
+                    'rgb(23, 162, 184)',
+                    'rgb(255, 193, 7)',
+                    'rgb(220, 53, 69)'
+                ]
+            }]
+        };
+
+        const customerLocationData = {
+            labels: ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Lainnya'],
+            datasets: [{
+                label: 'Jumlah Pembeli',
+                data: [35, 25, 20, 10, 5, 5],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)'
+            }]
+        };
+
+        const purchaseTimeData = {
+            labels: ['Pagi (06-12)', 'Siang (12-18)', 'Malam (18-24)', 'Dini Hari (00-06)'],
+            datasets: [{
+                label: 'Jumlah Pesanan',
+                data: [15, 45, 30, 10],
+                backgroundColor: 'rgba(153, 102, 255, 0.8)'
+            }]
+        };
+
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sales Trend Chart
+            new Chart(document.getElementById('salesChart'), {
+                type: 'line',
+                data: salesData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp ' + value.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Order Status Chart
+            new Chart(document.getElementById('orderStatusChart'), {
+                type: 'doughnut',
+                data: orderStatusData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+
+            // Customer Location Chart
+            new Chart(document.getElementById('customerLocationChart'), {
+                type: 'bar',
+                data: customerLocationData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Purchase Time Chart
+            new Chart(document.getElementById('purchaseTimeChart'), {
+                type: 'bar',
+                data: purchaseTimeData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+
+        function updateAnalytics() {
+            const period = document.getElementById('periodSelect').value;
+            // In real implementation, this would make an AJAX call to update the data
+            console.log('Updating analytics for period:', period);
+            // For now, just show a loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+            button.disabled = true;
+
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
