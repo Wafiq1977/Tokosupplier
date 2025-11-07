@@ -80,6 +80,75 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
 
+        <!-- Order Detail Display -->
+        <div th:if="${detailOrder != null}" class="row mb-4">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-check-circle me-2"></i>Pesanan Baru Dibuat - #<span th:text="${detailOrder.id}"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="text-success mb-3">Detail Produk</h6>
+                                <div th:each="item : ${detailOrder.orderItems}" class="d-flex align-items-center mb-3 p-3 border rounded">
+                                    <img th:src="${item.product.imageUrl != null ? item.product.imageUrl : '/images/product-placeholder.jpg'}"
+                                         alt="Product" class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1" th:text="${item.product.name}"></h6>
+                                        <small class="text-muted" th:text="'Supplier: ' + ${item.product.supplier.companyName}"></small>
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-dark" th:text="${item.quantity + ' ' + item.product.unit}"></span>
+                                            <span class="ms-3 fw-bold text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}"></span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-primary h5" th:text="'Rp ' + ${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-success mb-3">Ringkasan Pembayaran</h6>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Subtotal:</span>
+                                            <strong th:text="'Rp ' + ${#numbers.formatDecimal(detailOrder.subtotalAmount, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Ongkos Kirim:</span>
+                                            <strong th:text="'Rp ' + ${#numbers.formatDecimal(detailOrder.shippingCost, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span class="h5">Total:</span>
+                                            <strong class="text-primary h5" th:text="'Rp ' + ${#numbers.formatDecimal(detailOrder.totalAmount, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                        </div>
+                                        <div class="mb-3">
+                                            <small class="text-muted">Metode Pembayaran:</small>
+                                            <div th:text="${detailOrder.paymentMethod.name()}"></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <small class="text-muted">Status:</small>
+                                            <span class="badge bg-warning" th:text="${detailOrder.status.name()}"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <button class="btn btn-success w-100" onclick="processPayment()">
+                                        <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Orders List -->
         <div th:if="${orders != null and !orders.isEmpty()}" class="row">
             <div class="col-12">
@@ -99,7 +168,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr th:each="order : ${orders}">
+                                    <tr th:each="order : ${orders}" th:classappend="${highlightOrderId != null and highlightOrderId == order.id} ? 'table-success' : ''">
                                         <td>
                                             <strong th:text="'#' + ${order.id}"></strong>
                                         </td>
@@ -337,6 +406,11 @@
                 });
             });
         });
+
+        function processPayment() {
+            // For now, just show an alert. In a real implementation, this would redirect to a payment gateway
+            alert('Fitur pembayaran akan diintegrasikan dengan gateway pembayaran.');
+        }
     </script>
 </body>
 </html>

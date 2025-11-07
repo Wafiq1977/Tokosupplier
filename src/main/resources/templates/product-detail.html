@@ -14,6 +14,10 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!-- CSRF Token for AJAX -->
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
 </head>
 <body>
     <!-- Navigation -->
@@ -112,28 +116,50 @@
                         <p th:text="${product.description}"></p>
                     </div>
 
-                    <!-- Add to Cart Form -->
-                    <div th:if="${product.stock > 0}" class="add-to-cart-section">
-                        <form th:action="@{/cart/add}" method="post" class="d-flex align-items-center gap-3">
+                    <!-- Add to Cart and Buy Now Buttons -->
+                    <div th:if="${product.stock > 0}" class="add-to-cart-section" sec:authorize="hasRole('BUYER')">
+                        <form th:action="@{/cart/add}" method="post" id="addToCartForm">
                             <input type="hidden" name="productId" th:value="${product.id}" />
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
-                            <div class="input-group" style="width: 150px;">
-                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(-1)">-</button>
-                                <input type="number" class="form-control text-center" id="quantity" name="quantity"
-                                       value="1" min="1" th:max="${product.stock}" />
-                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(1)">+</button>
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label fw-bold">Jumlah</label>
+                                <div class="input-group" style="max-width: 200px;">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(-1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center" id="quantity" name="quantity"
+                                           value="1" min="1" th:max="${product.stock}" />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary flex-grow-1">
-                                <i class="fas fa-cart-plus me-2"></i>Tambah ke Keranjang
-                            </button>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-primary btn-lg" onclick="buyNowProduct()">
+                                    <i class="fas fa-bolt me-2"></i>Beli Sekarang
+                                </button>
+                                <button type="submit" class="btn btn-outline-primary btn-lg">
+                                    <i class="fas fa-cart-plus me-2"></i>Tambah ke Keranjang
+                                </button>
+                            </div>
                         </form>
                     </div>
 
                     <div th:if="${product.stock == 0}" class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Produk ini sedang tidak tersedia
+                    </div>
+                    
+                    <div sec:authorize="hasRole('SUPPLIER')" class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Anda adalah supplier. Hanya pembeli yang dapat membeli produk.
+                    </div>
+                    
+                    <div sec:authorize="!isAuthenticated()" class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Silakan <a th:href="@{/login}" class="alert-link">login</a> sebagai pembeli untuk membeli produk ini.
                     </div>
                 </div>
             </div>
@@ -153,7 +179,7 @@
                         <div th:if="${product.reviews != null and !product.reviews.isEmpty()}" th:each="review : ${product.reviews}" class="review-item mb-4 pb-4 border-bottom">
                             <div class="d-flex">
                                 <div class="flex-shrink-0">
-                                    <img th:src="${review.buyer.profileImageUrl != null ? review.buyer.profileImageUrl : '/images/avatar-placeholder.jpg'}"
+                                    <img th:src="${review.buyer.avatarUrl != null ? review.buyer.avatarUrl : '/images/avatar-placeholder.jpg'}"
                                          alt="User Avatar" class="rounded-circle" style="width: 40px; height: 40px;">
                                 </div>
                                 <div class="flex-grow-1 ms-3">
@@ -288,7 +314,9 @@
     <script>
         function changeQuantity(delta) {
             const input = document.getElementById('quantity');
-            let currentValue = parseInt(input.value);
+            if (!input) return;
+            
+            let currentValue = parseInt(input.value) || 1;
             let newValue = currentValue + delta;
             const max = parseInt(input.getAttribute('max')) || 99;
             const min = parseInt(input.getAttribute('min')) || 1;
@@ -296,6 +324,58 @@
             if (newValue >= min && newValue <= max) {
                 input.value = newValue;
             }
+        }
+
+        function buyNowProduct() {
+            const productId = document.querySelector('input[name="productId"]').value;
+            const quantity = document.getElementById('quantity').value;
+
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            fetch('/cart/buy-now', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    [header]: token
+                },
+                body: 'productId=' + productId + '&quantity=' + quantity
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else if (data.error) {
+                    showToast(data.error, 'error');
+                    if (data.redirect) {
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1500);
+                    }
+                } else {
+                    window.location.href = '/cart';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+            });
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
         }
 
         // Rating stars interaction
@@ -316,6 +396,38 @@
                 });
             });
         });
+
+        // Handle form submission with better feedback
+        const form = document.getElementById('addToCartForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        [header]: token
+                    },
+                    body: new URLSearchParams(formData)
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        return response.text();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Terjadi kesalahan saat menambahkan ke keranjang', 'error');
+                });
+            });
+        }
     </script>
 </body>
 </html>

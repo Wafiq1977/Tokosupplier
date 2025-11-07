@@ -76,6 +76,20 @@ CREATE TABLE order_items (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
+-- Reviews table
+CREATE TABLE reviews (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    buyer_id BIGINT NOT NULL,
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    helpful_count INT DEFAULT 0,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- ===========================================
 -- INDEXES FOR PERFORMANCE
 -- ===========================================
@@ -91,6 +105,9 @@ CREATE INDEX idx_orders_supplier ON orders(supplier_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_order_items_order ON order_items(order_id);
 CREATE INDEX idx_order_items_product ON order_items(product_id);
+CREATE INDEX idx_reviews_product ON reviews(product_id);
+CREATE INDEX idx_reviews_buyer ON reviews(buyer_id);
+CREATE INDEX idx_reviews_created_at ON reviews(created_at);
 
 -- ===========================================
 -- SAMPLE DATA INSERTION
@@ -146,6 +163,19 @@ INSERT INTO order_items (order_id, product_id, quantity, price) VALUES
 (3, 7, 1, 25000.00),
 (3, 8, 1, 35000.00),
 (4, 4, 1, 5000.00);
+
+-- Insert sample reviews
+INSERT INTO reviews (product_id, buyer_id, rating, comment, created_at) VALUES
+(1, 4, 5, 'Tepung terigu berkualitas tinggi, hasil baking sangat bagus!', '2024-01-20 14:30:00'),
+(2, 4, 4, 'Gula pasir putih dan halus, cocok untuk semua keperluan.', '2024-01-21 09:15:00'),
+(3, 5, 5, 'Minyak goreng dengan titik asap tinggi, sangat baik untuk menggoreng.', '2024-01-22 16:45:00'),
+(4, 5, 4, 'Kemasan plastik food grade, aman untuk produk makanan.', '2024-01-23 11:20:00'),
+(5, 6, 5, 'Kopi arabika premium, aroma dan rasa sangat autentik.', '2024-01-24 08:30:00'),
+(6, 6, 4, 'Karton box berkualitas, cocok untuk packaging produk.', '2024-01-25 13:45:00'),
+(7, 4, 5, 'Vanilla extract murni, flavoring yang sangat baik.', '2024-01-26 10:15:00'),
+(8, 5, 4, 'Daun teh hijau organik, sempurna untuk teh herbal.', '2024-01-27 15:30:00'),
+(9, 6, 5, 'Benang jahit berkualitas, cocok untuk industri tekstil.', '2024-01-28 12:00:00'),
+(10, 4, 4, 'Kain katun berkualitas tinggi, hasil jahitan bagus.', '2024-01-29 17:45:00');
 
 -- ===========================================
 -- USEFUL QUERIES FOR DEVELOPMENT

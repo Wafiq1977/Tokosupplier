@@ -31,6 +31,8 @@ public class Review {
 
     private LocalDateTime updatedAt;
 
+    private Integer helpfulCount = 0;
+
     // Validation constraint
     @PrePersist
     @PreUpdate

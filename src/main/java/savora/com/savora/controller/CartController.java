@@ -52,13 +52,21 @@ public class CartController {
                            @AuthenticationPrincipal UserDetails userDetails,
                            RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
+            redirectAttributes.addFlashAttribute("error", "Silakan login terlebih dahulu");
             return "redirect:/login";
         }
 
         try {
             User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
             if (user == null) {
+                redirectAttributes.addFlashAttribute("error", "User tidak ditemukan");
                 return "redirect:/login";
+            }
+            
+            // Check if user is a buyer
+            if (user.getRole() != User.Role.BUYER) {
+                redirectAttributes.addFlashAttribute("error", "Hanya pembeli yang dapat menambahkan produk ke keranjang");
+                return "redirect:/";
             }
 
             cartService.addToCart(user, productId, quantity);
@@ -68,6 +76,61 @@ public class CartController {
         }
 
         return "redirect:/cart";
+    }
+
+    // REST endpoint for fetch() from homepage (no redirect)
+    @PostMapping(value = "/add", params = {"productId", "quantity"}, headers = "Content-Type=application/x-www-form-urlencoded")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<?> addToCartApi(@RequestParam Long productId,
+                                                                   @RequestParam(defaultValue = "1") Integer quantity,
+                                                                   @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return org.springframework.http.ResponseEntity.status(401).body(java.util.Map.of("error", "Unauthorized"));
+        }
+        User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+        if (user == null) {
+            return org.springframework.http.ResponseEntity.status(401).body(java.util.Map.of("error", "Unauthorized"));
+        }
+        
+        // Check if user is a buyer
+        if (user.getRole() != User.Role.BUYER) {
+            return org.springframework.http.ResponseEntity.status(403).body(java.util.Map.of("error", "Only buyers can add to cart"));
+        }
+        
+        try {
+            cartService.addToCart(user, productId, quantity);
+            return org.springframework.http.ResponseEntity.ok(java.util.Map.of("status", "OK", "message", "Product added to cart"));
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Buy now endpoint - adds to cart and returns cart URL
+    @PostMapping("/buy-now")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<?> buyNow(@RequestParam Long productId,
+                                                             @RequestParam(defaultValue = "1") Integer quantity,
+                                                             @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return org.springframework.http.ResponseEntity.status(401).body(java.util.Map.of("error", "Please login first", "redirect", "/login"));
+        }
+        
+        User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+        if (user == null) {
+            return org.springframework.http.ResponseEntity.status(401).body(java.util.Map.of("error", "User not found", "redirect", "/login"));
+        }
+        
+        // Check if user is a buyer
+        if (user.getRole() != User.Role.BUYER) {
+            return org.springframework.http.ResponseEntity.status(403).body(java.util.Map.of("error", "Only buyers can purchase products"));
+        }
+        
+        try {
+            cartService.addToCart(user, productId, quantity);
+            return org.springframework.http.ResponseEntity.ok(java.util.Map.of("status", "OK", "redirect", "/cart"));
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/update")
@@ -141,16 +204,14 @@ public class CartController {
 
     @GetMapping("/count")
     @ResponseBody
-    public Long getCartCount(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return 0L;
+    public java.util.Map<String, Long> getCartCount(@AuthenticationPrincipal UserDetails userDetails) {
+        long count = 0L;
+        if (userDetails != null) {
+            User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            if (user != null) {
+                count = cartService.getCartItemCount(user);
+            }
         }
-
-        User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
-        if (user == null) {
-            return 0L;
-        }
-
-        return cartService.getCartItemCount(user);
+        return java.util.Map.of("count", count);
     }
 }

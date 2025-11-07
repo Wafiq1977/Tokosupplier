@@ -29,6 +29,9 @@ public class User {
     private String companyName;
     private String phoneNumber;
     private String address;
+    private String city;
+    private String province;
+    private String postalCode;
     private String avatarUrl;
 
     @Column(name = "created_at")

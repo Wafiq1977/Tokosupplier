@@ -96,6 +96,107 @@ public class ProductController {
         return "redirect:/products/supplier";
     }
 
+    @GetMapping("/edit/{id}")
+    public String editProductForm(@PathVariable Long id,
+                                  @AuthenticationPrincipal UserDetails userDetails,
+                                  Model model,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            User supplier = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            Product product = productService.getProductById(id).orElseThrow();
+
+            // Verify the product belongs to this supplier
+            if (!product.getSupplier().getId().equals(supplier.getId())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Anda tidak memiliki akses untuk mengedit produk ini.");
+                return "redirect:/products/supplier";
+            }
+
+            model.addAttribute("product", product);
+            model.addAttribute("categories", categoryService.getAllCategories());
+            return "supplier/edit-product";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Produk tidak ditemukan.");
+            return "redirect:/products/supplier";
+        }
+    }
+
+    @PostMapping("/edit/{id}")
+    public String editProduct(@PathVariable Long id,
+                              @ModelAttribute Product product,
+                              BindingResult bindingResult,
+                              @RequestParam(value = "price") String priceStr,
+                              @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+                              @AuthenticationPrincipal UserDetails userDetails,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            User supplier = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            Product existingProduct = productService.getProductById(id).orElseThrow();
+
+            // Verify the product belongs to this supplier
+            if (!existingProduct.getSupplier().getId().equals(supplier.getId())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Anda tidak memiliki akses untuk mengedit produk ini.");
+                return "redirect:/products/supplier";
+            }
+
+            // Set supplier and ID
+            product.setSupplier(supplier);
+            product.setId(id);
+
+            // Convert price string to BigDecimal
+            if (priceStr != null && !priceStr.trim().isEmpty()) {
+                try {
+                    // Remove any non-numeric characters except decimal point and comma
+                    String cleanPrice = priceStr.replaceAll("[^\\d.,]", "").replace(".", "").replace(",", ".");
+                    if (cleanPrice.isEmpty()) {
+                        redirectAttributes.addFlashAttribute("errorMessage", "Harga produk tidak boleh kosong.");
+                        return "redirect:/products/edit/" + id;
+                    }
+                    java.math.BigDecimal priceValue = new java.math.BigDecimal(cleanPrice);
+                    if (priceValue.compareTo(new java.math.BigDecimal("1000")) < 0) {
+                        redirectAttributes.addFlashAttribute("errorMessage", "Harga produk minimal Rp 1.000. Harga yang dimasukkan: " + priceValue);
+                        return "redirect:/products/edit/" + id;
+                    }
+                    product.setPrice(priceValue);
+                } catch (NumberFormatException e) {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Format harga tidak valid.");
+                    return "redirect:/products/edit/" + id;
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Harga produk tidak boleh kosong.");
+                return "redirect:/products/edit/" + id;
+            }
+
+            // Set stock quantity from stock field
+            if (product.getStock() != null) {
+                product.setStockQuantity(product.getStock());
+            }
+
+            // Handle file upload - only if a new file is provided
+            if (imageFile != null && !imageFile.isEmpty()) {
+                if (fileUploadService.isValidImageFile(imageFile)) {
+                    String imageUrl = fileUploadService.uploadProductImage(imageFile);
+                    product.setImageUrl(imageUrl);
+                } else {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Format file gambar tidak valid. Gunakan JPG, PNG, GIF, atau WebP.");
+                    return "redirect:/products/edit/" + id;
+                }
+            } else {
+                // Keep existing image if no new file uploaded
+                product.setImageUrl(existingProduct.getImageUrl());
+            }
+
+            productService.saveProduct(product);
+            redirectAttributes.addFlashAttribute("successMessage", "Produk berhasil diperbarui!");
+        } catch (IOException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengupload gambar: " + e.getMessage());
+            return "redirect:/products/edit/" + id;
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal memperbarui produk: " + e.getMessage());
+            return "redirect:/products/edit/" + id;
+        }
+        return "redirect:/products/supplier";
+    }
+
     @PostMapping("/add")
     public String addProduct(@ModelAttribute Product product,
                              BindingResult bindingResult,

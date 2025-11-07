@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -56,6 +57,9 @@ public class Product {
     private Integer stock = 0;
     private Integer salesCount = 0;
     private Double averageRating = 0.0;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Review> reviews;
 
     @PreUpdate
     protected void onUpdate() {

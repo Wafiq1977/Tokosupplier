@@ -94,10 +94,22 @@ public class OrderController {
     }
 
     @GetMapping("/buyer")
-    public String buyerOrders(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+    public String buyerOrders(@AuthenticationPrincipal UserDetails userDetails,
+                             @RequestParam(required = false) Long highlight,
+                             @RequestParam(required = false) Long showDetail,
+                             Model model) {
         User buyer = userService.findByUsername(userDetails.getUsername()).orElse(null);
         if (buyer != null) {
             model.addAttribute("orders", orderService.getOrdersByBuyer(buyer));
+            model.addAttribute("highlightOrderId", highlight);
+
+            // If showDetail parameter is provided, get the specific order details
+            if (showDetail != null) {
+                Order detailOrder = orderService.getOrderById(showDetail).orElse(null);
+                if (detailOrder != null && detailOrder.getBuyer().getId().equals(buyer.getId())) {
+                    model.addAttribute("detailOrder", detailOrder);
+                }
+            }
         }
         return "buyer/orders";
     }
@@ -127,7 +139,7 @@ public class OrderController {
                                      @RequestParam Order.PaymentStatus paymentStatus,
                                      RedirectAttributes redirectAttributes) {
         try {
-            Order order = orderService.getOrderById(id).orElseThrow();
+            Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
             order.setPaymentStatus(paymentStatus);
             orderService.updateOrder(order);
             redirectAttributes.addFlashAttribute("successMessage", "Status pembayaran berhasil diperbarui!");

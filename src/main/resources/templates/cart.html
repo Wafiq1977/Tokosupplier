@@ -117,7 +117,7 @@
                                             </div>
                                         </div>
                                         <div class="col-md-2">
-                                            <strong class="text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                            <strong class="text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
                                         </div>
                                         <div class="col-md-2 text-end">
                                             <form th:action="@{'/cart/remove'}" method="post" style="display: inline;">
@@ -162,7 +162,7 @@
                                     <span class="h5">Total Pembayaran:</span>
                                     <strong class="text-primary h5" th:text="'Rp ' + ${#numbers.formatDecimal(totalPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
                                 </div>
-                                <a href="#checkout" class="btn btn-primary w-100 mb-2">
+                                <a th:href="@{/payment/dashboard}" class="btn btn-primary w-100 mb-2">
                                     <i class="fas fa-credit-card me-2"></i>Lanjut ke Pembayaran
                                 </a>
                                 <a th:href="@{/}" class="btn btn-outline-primary w-100">

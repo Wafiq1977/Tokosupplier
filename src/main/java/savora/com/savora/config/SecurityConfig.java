@@ -24,8 +24,10 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/", "/register", "/login", "/logout", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/products/**").permitAll() // allow product detail and API for everyone
+                .requestMatchers("/cart/count").permitAll()
+                .requestMatchers("/cart/add", "/orders/**", "/buyer/**").hasRole("BUYER")
                 .requestMatchers("/supplier/**").hasRole("SUPPLIER")
-                .requestMatchers("/buyer/**").hasRole("BUYER")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

@@ -2,9 +2,11 @@ package savora.com.savora.controller;
 
 import savora.com.savora.model.Order;
 import savora.com.savora.model.Product;
+import savora.com.savora.model.Review;
 import savora.com.savora.model.User;
 import savora.com.savora.service.OrderService;
 import savora.com.savora.service.ProductService;
+import savora.com.savora.service.ReviewService;
 import savora.com.savora.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,6 +32,9 @@ public class BuyerDashboardController {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private ReviewService reviewService;
+
     @GetMapping("/dashboard")
     public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User buyer = userService.findByUsername(userDetails.getUsername()).orElse(null);
@@ -54,11 +59,18 @@ public class BuyerDashboardController {
                 .limit(5)
                 .toList();
 
+        // Get recent reviews (last 5)
+        List<Review> recentReviews = reviewService.getReviewsByBuyer(buyer).stream()
+                .sorted((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()))
+                .limit(5)
+                .toList();
+
         model.addAttribute("totalOrders", totalOrders);
         model.addAttribute("completedOrders", completedOrders);
         model.addAttribute("pendingOrders", pendingOrders);
         model.addAttribute("totalSpent", totalSpent);
         model.addAttribute("recentOrders", recentOrders);
+        model.addAttribute("recentReviews", recentReviews);
         model.addAttribute("recentActivities", List.of()); // TODO: Implement activity tracking
 
         return "buyer/dashboard";

@@ -2,13 +2,12 @@ package savora.com.savora.service;
 
 import savora.com.savora.model.Order;
 import savora.com.savora.model.OrderItem;
-import savora.com.savora.model.Product;
 import savora.com.savora.model.User;
 import savora.com.savora.repository.OrderRepository;
-import savora.com.savora.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.math.BigDecimal;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -18,49 +17,6 @@ public class OrderService {
     @Autowired
     private OrderRepository orderRepository;
 
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private NotificationService notificationService;
-
-    public Order createOrder(User buyer, List<OrderItem> orderItems) {
-        Order order = new Order();
-        order.setBuyer(buyer);
-        order.setOrderItems(new java.util.HashSet<>(orderItems));
-
-        // Set supplier from first product (assuming single supplier per order for simplicity)
-        if (!orderItems.isEmpty()) {
-            order.setSupplier(orderItems.get(0).getProduct().getSupplier());
-        }
-
-        // Calculate subtotal
-        BigDecimal subtotal = orderItems.stream()
-                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        order.setTotalAmount(subtotal); // This will be updated with shipping cost later
-
-        // Set order reference in items
-        orderItems.forEach(item -> item.setOrder(order));
-
-        Order savedOrder = orderRepository.save(order);
-
-        // Send notifications
-        notificationService.notifyOrderCreated(buyer, savedOrder.getSupplier(), savedOrder.getId().toString());
-
-        return savedOrder;
-    }
-
-    public Order updateOrder(Order order) {
-        // Recalculate total including shipping cost
-        BigDecimal subtotal = order.getOrderItems().stream()
-                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        order.setTotalAmount(subtotal.add(order.getShippingCost() != null ? order.getShippingCost() : BigDecimal.ZERO));
-
-        return orderRepository.save(order);
-    }
-
     public List<Order> getOrdersByBuyer(User buyer) {
         return orderRepository.findByBuyer(buyer);
     }
@@ -69,28 +25,54 @@ public class OrderService {
         return orderRepository.findBySupplier(supplier);
     }
 
+    public Order saveOrder(Order order) {
+        return orderRepository.save(order);
+    }
+
     public Optional<Order> getOrderById(Long id) {
         return orderRepository.findById(id);
     }
 
-    public Order updateOrderStatus(Long orderId, Order.Status status) {
-        Optional<Order> orderOpt = orderRepository.findById(orderId);
-        if (orderOpt.isPresent()) {
-            Order order = orderOpt.get();
-            Order.Status oldStatus = order.getStatus();
-            order.setStatus(status);
-            Order updatedOrder = orderRepository.save(order);
+    @Transactional
+    public Order createOrder(User buyer, List<OrderItem> items) {
+        // Calculate total amount
+        java.math.BigDecimal totalAmount = items.stream()
+                .map(item -> item.getPrice().multiply(java.math.BigDecimal.valueOf(item.getQuantity())))
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
-            // Send notifications for status change
-            notificationService.notifyOrderStatusUpdate(
-                order.getBuyer(),
-                order.getSupplier(),
-                orderId.toString(),
-                status.toString()
-            );
+        Order order = new Order();
+        order.setBuyer(buyer);
+        order.setSupplier(items.get(0).getProduct().getSupplier()); // Assuming all items from same supplier
+        order.setTotalAmount(totalAmount);
+        order.setOrderItems(new java.util.HashSet<>(items));
 
-            return updatedOrder;
-        }
-        throw new RuntimeException("Order not found");
+        // Set order reference in items
+        items.forEach(item -> item.setOrder(order));
+
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order updateOrder(Order order) {
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public void updateOrderStatus(Long orderId, Order.Status status) {
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        order.setStatus(status);
+        orderRepository.save(order);
+    }
+
+    public List<Order> getOrdersByBuyerAndStatus(User buyer, Order.Status status) {
+        return orderRepository.findByBuyerAndStatus(buyer, status);
+    }
+
+    public List<Order> getRecentOrdersByBuyer(User buyer, int limit) {
+        List<Order> allOrders = orderRepository.findByBuyer(buyer);
+        return allOrders.stream()
+                .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
+                .limit(limit)
+                .toList();
     }
 }
