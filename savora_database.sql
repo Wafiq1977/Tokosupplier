@@ -134,16 +134,16 @@ INSERT INTO users (username, password, email, role, company_name, phone_number, 
 
 -- Insert sample products
 INSERT INTO products (name, description, price, stock_quantity, image_url, supplier_id, category_id) VALUES
-('Tepung Terigu Premium', 'Tepung terigu berkualitas tinggi untuk berbagai keperluan baking dan masakan', 15000.00, 500, 'https://via.placeholder.com/300x200?text=Tepung+Terigu', 1, 1),
-('Gula Pasir Putih', 'Gula pasir putih kristal halus, cocok untuk minuman dan makanan', 12000.00, 300, 'https://via.placeholder.com/300x200?text=Gula+Pasir', 1, 1),
-('Minyak Goreng', 'Minyak goreng sawit berkualitas dengan titik asap tinggi', 18000.00, 200, 'https://via.placeholder.com/300x200?text=Minyak+Goreng', 2, 1),
-('Kemasan Plastik', 'Kemasan plastik food grade untuk produk makanan', 5000.00, 1000, 'https://via.placeholder.com/300x200?text=Kemasan+Plastik', 2, 3),
-('Kopi Arabika', 'Biji kopi arabika premium dari dataran tinggi', 75000.00, 50, 'https://via.placeholder.com/300x200?text=Kopi+Arabika', 3, 2),
-('Karton Box', 'Karton box berbagai ukuran untuk packaging produk', 8000.00, 300, 'https://via.placeholder.com/300x200?text=Karton+Box', 3, 3),
-('Vanilla Extract', 'Ekstrak vanilla murni untuk flavoring makanan dan minuman', 25000.00, 100, 'https://via.placeholder.com/300x200?text=Vanilla+Extract', 1, 4),
-('Daun Teh Hijau', 'Daun teh hijau organik untuk produksi teh herbal', 35000.00, 75, 'https://via.placeholder.com/300x200?text=Daun+Teh+Hijau', 2, 5),
-('Benang Jahit', 'Benang jahit berbagai warna dan ukuran untuk industri tekstil', 15000.00, 200, 'https://via.placeholder.com/300x200?text=Benang+Jahit', 3, 6),
-('Kain Katun', 'Kain katun berkualitas untuk konveksi dan kerajinan', 45000.00, 150, 'https://via.placeholder.com/300x200?text=Kain+Katun', 1, 6);
+('Tepung Terigu Premium', 'Tepung terigu berkualitas tinggi untuk berbagai keperluan baking dan masakan', 15000.00, 500, '/images/products/0d14c0af-427a-4c38-b502-058cf568d1ab.png', 1, 1),
+('Gula Pasir Putih', 'Gula pasir putih kristal halus, cocok untuk minuman dan makanan', 12000.00, 300, '/images/products/4eae39f8-3b02-4c4a-bbf8-2c87712ddc72.png', 1, 1),
+('Minyak Goreng', 'Minyak goreng sawit berkualitas dengan titik asap tinggi', 18000.00, 200, '/images/products/7a532ae5-ad77-4597-a42e-820146a1e548.png', 2, 1),
+('Kemasan Plastik', 'Kemasan plastik food grade untuk produk makanan', 5000.00, 1000, '/images/products/92d96027-35bd-4bab-b6c0-9350291518a1.png', 2, 3),
+('Kopi Arabika', 'Biji kopi arabika premium dari dataran tinggi', 75000.00, 50, '/images/products/95735edc-559b-410f-aade-ca49bb556718.png', 3, 2),
+('Karton Box', 'Karton box berbagai ukuran untuk packaging produk', 8000.00, 300, '/images/products/56664758-3705-4d42-bdd3-ff02108daf79.png', 3, 3),
+('Vanilla Extract', 'Ekstrak vanilla murni untuk flavoring makanan dan minuman', 25000.00, 100, '/images/products/c6496077-c395-4bea-9223-387c20c3b258.png', 1, 4),
+('Daun Teh Hijau', 'Daun teh hijau organik untuk produksi teh herbal', 35000.00, 75, '/images/products/0d14c0af-427a-4c38-b502-058cf568d1ab.png', 2, 5),
+('Benang Jahit', 'Benang jahit berbagai warna dan ukuran untuk industri tekstil', 15000.00, 200, '/images/products/4eae39f8-3b02-4c4a-bbf8-2c87712ddc72.png', 3, 6),
+('Kain Katun', 'Kain katun berkualitas untuk konveksi dan kerajinan', 45000.00, 150, '/images/products/7a532ae5-ad77-4597-a42e-820146a1e548.png', 1, 6);
 
 -- Insert sample orders
 INSERT INTO orders (buyer_id, supplier_id, total_amount, status, created_at) VALUES

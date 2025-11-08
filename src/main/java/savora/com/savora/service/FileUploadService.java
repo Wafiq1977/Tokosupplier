@@ -1,5 +1,7 @@
 package savora.com.savora.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -12,9 +14,11 @@ import java.util.UUID;
 @Service
 public class FileUploadService {
 
-    private final Path uploadPath = Paths.get("uploads/products");
+    private final Path uploadPath;
 
-    public FileUploadService() {
+    @Autowired
+    public FileUploadService(@Value("${upload.base:uploads}") String uploadBase) {
+        this.uploadPath = Paths.get(uploadBase, "products");
         try {
             Files.createDirectories(uploadPath);
         } catch (IOException e) {
@@ -45,7 +49,7 @@ public class FileUploadService {
             : ".jpg";
 
         String filename = UUID.randomUUID().toString() + extension;
-        Path filePath = uploadPath.resolve(filename);
+    Path filePath = uploadPath.resolve(filename);
 
         // Save file
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
