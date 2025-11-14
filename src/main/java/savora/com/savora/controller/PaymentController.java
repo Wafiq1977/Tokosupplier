@@ -33,39 +33,7 @@ public class PaymentController {
     @Autowired
     private CartService cartService;
 
-    @GetMapping("/dashboard")
-    public String paymentDashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User buyer = userService.findByUsername(userDetails.getUsername()).orElse(null);
-        if (buyer != null) {
-            // Get cart items for checkout
-            List<Cart> cartItems = cartService.getCartItems(buyer);
-            Long totalQuantity = cartService.getTotalQuantity(buyer);
-            java.math.BigDecimal totalPrice = cartService.getTotalPrice(buyer);
 
-            model.addAttribute("cartItems", cartItems);
-            model.addAttribute("totalQuantity", totalQuantity);
-            model.addAttribute("totalPrice", totalPrice);
-
-            // Get pending payments (orders that need payment)
-            List<Order> pendingPayments = orderService.getOrdersByBuyerAndStatus(buyer, Order.Status.PENDING);
-            model.addAttribute("pendingPayments", pendingPayments);
-
-            // Get recent transactions
-            List<Order> recentTransactions = orderService.getRecentOrdersByBuyer(buyer, 10);
-            model.addAttribute("recentTransactions", recentTransactions);
-
-            // Calculate total pending amount
-            double totalPendingAmount = pendingPayments.stream()
-                    .mapToDouble(order -> order.getTotalAmount().doubleValue())
-                    .sum();
-            model.addAttribute("totalPendingAmount", totalPendingAmount);
-
-            // Add user info for shipping address
-            model.addAttribute("user", buyer);
-        }
-
-        return "buyer/payment-dashboard";
-    }
 
     @PostMapping("/create-order")
     public String createOrder(@RequestParam String paymentMethod,
@@ -90,15 +58,14 @@ public class PaymentController {
             }
 
             // Create order items from cart
-            List<OrderItem> orderItems = cartItems.stream()
-                    .map(cart -> {
-                        OrderItem item = new OrderItem();
-                        item.setProduct(cart.getProduct());
-                        item.setQuantity(cart.getQuantity());
-                        item.setPrice(cart.getUnitPrice());
-                        return item;
-                    })
-                    .toList();
+            List<OrderItem> orderItems = new java.util.ArrayList<>();
+            for (Cart cart : cartItems) {
+                OrderItem item = new OrderItem();
+                item.setProduct(cart.getProduct());
+                item.setQuantity(cart.getQuantity());
+                item.setPrice(cart.getUnitPrice());
+                orderItems.add(item);
+            }
 
             // Create order
             Order order = orderService.createOrder(buyer, orderItems);
@@ -149,8 +116,12 @@ public class PaymentController {
             return "redirect:/buyer/orders";
 
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Gagal membuat pesanan: " + e.getMessage());
-            return "redirect:/payment/dashboard";
+            e.printStackTrace(); // Add this to see the actual error
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            System.err.println("Error creating order: " + errorMsg);
+            e.printStackTrace(System.err);
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal membuat pesanan: " + errorMsg);
+            return "redirect:/buyer/orders";
         }
     }
 }

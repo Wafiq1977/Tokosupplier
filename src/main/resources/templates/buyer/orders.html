@@ -137,11 +137,21 @@
                                     </div>
                                 </div>
 
-                                <div class="mt-3">
-                                    <button class="btn btn-success w-100" onclick="processPayment()">
-                                        <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
-                                    </button>
-                                </div>
+                                        <div class="mt-3">
+                                            <div class="alert alert-info">
+                                                <h6><i class="fas fa-info-circle me-2"></i>Informasi Pembayaran</h6>
+                                                <p class="mb-2">Silakan transfer ke rekening supplier berikut:</p>
+                                                <div class="bg-light p-3 rounded">
+                                                    <strong>Bank: <span th:text="${detailOrder.supplier.bankName} ?: 'Belum diatur'"></span></strong><br>
+                                                    <strong>No. Rekening: <span th:text="${detailOrder.supplier.bankAccountNumber} ?: 'Belum diatur'"></span></strong><br>
+                                                    <strong>Atas Nama: <span th:text="${detailOrder.supplier.companyName}"></span></strong>
+                                                </div>
+                                                <p class="mb-0 mt-2 text-muted">Setelah transfer, supplier akan mengkonfirmasi pembayaran dan memproses pengiriman.</p>
+                                            </div>
+                                            <button class="btn btn-success w-100" onclick="confirmPayment()">
+                                                <i class="fas fa-check-circle me-2"></i>Saya Sudah Transfer
+                                            </button>
+                                        </div>
                             </div>
                         </div>
                     </div>
@@ -406,6 +416,13 @@
                 });
             });
         });
+
+        function confirmPayment() {
+            if (confirm('Apakah Anda yakin sudah melakukan transfer pembayaran? Supplier akan diberitahu untuk mengkonfirmasi pembayaran Anda.')) {
+                alert('Terima kasih! Supplier akan segera mengkonfirmasi pembayaran Anda dan memproses pengiriman.');
+                // In a real implementation, this would send a notification to the supplier
+            }
+        }
 
         function processPayment() {
             // For now, just show an alert. In a real implementation, this would redirect to a payment gateway

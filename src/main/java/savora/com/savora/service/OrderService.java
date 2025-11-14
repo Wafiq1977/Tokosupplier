@@ -35,19 +35,38 @@ public class OrderService {
 
     @Transactional
     public Order createOrder(User buyer, List<OrderItem> items) {
+        if (items == null || items.isEmpty()) {
+            throw new RuntimeException("Tidak ada item dalam pesanan");
+        }
+
+        // Validate all items have the same supplier
+        User supplier = items.get(0).getProduct().getSupplier();
+        if (supplier == null) {
+            throw new RuntimeException("Supplier tidak ditemukan untuk produk");
+        }
+
+        for (OrderItem item : items) {
+            if (!supplier.equals(item.getProduct().getSupplier())) {
+                throw new RuntimeException("Semua produk harus dari supplier yang sama");
+            }
+        }
+
         // Calculate total amount
-        java.math.BigDecimal totalAmount = items.stream()
-                .map(item -> item.getPrice().multiply(java.math.BigDecimal.valueOf(item.getQuantity())))
-                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        java.math.BigDecimal totalAmount = java.math.BigDecimal.ZERO;
+        for (OrderItem item : items) {
+            totalAmount = totalAmount.add(item.getPrice().multiply(java.math.BigDecimal.valueOf(item.getQuantity())));
+        }
 
         Order order = new Order();
         order.setBuyer(buyer);
-        order.setSupplier(items.get(0).getProduct().getSupplier()); // Assuming all items from same supplier
+        order.setSupplier(supplier);
         order.setTotalAmount(totalAmount);
         order.setOrderItems(new java.util.HashSet<>(items));
 
         // Set order reference in items
-        items.forEach(item -> item.setOrder(order));
+        for (OrderItem item : items) {
+            item.setOrder(order);
+        }
 
         return orderRepository.save(order);
     }

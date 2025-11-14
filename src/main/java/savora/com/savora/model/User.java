@@ -33,6 +33,8 @@ public class User {
     private String province;
     private String postalCode;
     private String avatarUrl;
+    private String bankAccountNumber;
+    private String bankName;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

@@ -1,9 +1,11 @@
 package savora.com.savora.controller;
 
+import savora.com.savora.model.Cart;
 import savora.com.savora.model.Order;
 import savora.com.savora.model.OrderItem;
 import savora.com.savora.model.Product;
 import savora.com.savora.model.User;
+import savora.com.savora.service.CartService;
 import savora.com.savora.service.OrderService;
 import savora.com.savora.service.ProductService;
 import savora.com.savora.service.UserService;
@@ -30,6 +32,9 @@ public class OrderController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CartService cartService;
 
     @PostMapping("/create")
     public String createOrder(@RequestParam Long productId,
@@ -165,5 +170,50 @@ public class OrderController {
             redirectAttributes.addFlashAttribute("errorMessage", "Gagal memperbarui informasi pengiriman: " + e.getMessage());
         }
         return "redirect:/orders/supplier";
+    }
+
+    @GetMapping("/checkout")
+    public String checkout(@AuthenticationPrincipal UserDetails userDetails, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            if (userDetails == null) {
+                return "redirect:/login";
+            }
+            User buyer = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            if (buyer == null) {
+                return "redirect:/login";
+            }
+
+            // Get cart items for checkout
+            List<Cart> cartItems = cartService.getCartItems(buyer);
+            if (cartItems == null) {
+                cartItems = new ArrayList<>();
+            }
+            if (cartItems.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.");
+                return "redirect:/cart";
+            }
+
+            Long totalQuantity = cartService.getTotalQuantity(buyer);
+            java.math.BigDecimal totalPrice = cartService.getTotalPrice(buyer);
+
+            // Ensure values are not null
+            if (totalPrice == null) {
+                totalPrice = java.math.BigDecimal.ZERO;
+            }
+            if (totalQuantity == null) {
+                totalQuantity = 0L;
+            }
+
+            model.addAttribute("cartItems", cartItems);
+            model.addAttribute("totalQuantity", totalQuantity);
+            model.addAttribute("totalPrice", totalPrice);
+            model.addAttribute("user", buyer);
+
+            return "buyer/checkout";
+        } catch (Exception e) {
+            // Log the error and redirect to cart with error message
+            redirectAttributes.addFlashAttribute("error", "Terjadi kesalahan saat memuat halaman checkout. Silakan coba lagi.");
+            return "redirect:/cart";
+        }
     }
 }

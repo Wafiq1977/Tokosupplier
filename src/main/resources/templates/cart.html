@@ -162,8 +162,8 @@
                                     <span class="h5">Total Pembayaran:</span>
                                     <strong class="text-primary h5" th:text="'Rp ' + ${#numbers.formatDecimal(totalPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
                                 </div>
-                                <a th:href="@{/payment/dashboard}" class="btn btn-primary w-100 mb-2">
-                                    <i class="fas fa-credit-card me-2"></i>Lanjut ke Pembayaran
+                                <a th:href="@{/orders/checkout}" class="btn btn-primary w-100 mb-2">
+                                    <i class="fas fa-credit-card me-2"></i>Lanjut ke Checkout
                                 </a>
                                 <a th:href="@{/}" class="btn btn-outline-primary w-100">
                                     <i class="fas fa-shopping-bag me-2"></i>Lanjut Belanja

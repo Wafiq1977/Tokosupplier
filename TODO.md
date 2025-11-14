@@ -1,37 +1,18 @@
-# TODO: Perbaikan Fitur Tambah Produk Supplier
+# TODO List for Checkout Implementation
 
-## Langkah-langkah yang perlu dilakukan:
+## Current Status
+- Cart page links to `/payment/dashboard` for checkout
+- PaymentController handles `/payment/dashboard` and order creation
+- TODO.md contains error marker for `/orders/checkout`
 
-1. **Update Model Product.java**
-   - Tambahkan field `unit` dengan tipe String
-   - Tambahkan anotasi validasi (@NotBlank, @NotNull, @Size, dll.)
+## Tasks
+- [x] Create `/orders/checkout` endpoint in OrderController
+- [x] Update cart.html to link to `/orders/checkout` instead of `/payment/dashboard`
+- [ ] Move checkout logic from PaymentController to OrderController if needed
+- [ ] Test the checkout flow
+- [ ] Remove error marker from TODO.md
 
-2. **Update Database Schema (savora_database.sql)**
-   - Tambahkan kolom `unit` VARCHAR(50) ke tabel products
-
-3. **Update ProductController.java**
-   - Tambahkan @Valid ke @ModelAttribute Product
-   - Tambahkan BindingResult untuk menangani error validasi
-   - Jika ada error, return ke form dengan pesan error
-
-4. **Update FileUploadConfig.java**
-   - Konfigurasi static resource untuk folder uploads agar gambar dapat diakses
-
-5. **Test Kompilasi**
-   - Jalankan `mvn clean compile` untuk memastikan tidak ada error
-
-6. **Test Fitur**
-   - Jalankan aplikasi dan test tambah produk
-   - Pastikan data tersimpan ke database dengan benar
-   - Pastikan gambar terupload dan dapat diakses
-
-## Status Progress:
-
-- [x] Update Model Product.java - SELESAI
-- [x] Update Database Schema (savora_database.sql) - SELESAI
-- [x] Update ProductController.java - SELESAI
-- [x] Update FileUploadConfig.java - SUDAH ADA
-- [x] Test Kompilasi - SUDAH DIJALANKAN
-- [x] Perbaikan JavaScript untuk input harga - SELESAI
-- [x] Perbaikan validasi harga di controller - SELESAI
-- [x] Test Fitur - SUDAH DITEST OLEH USER
+## Notes
+- The `/orders/checkout` URL was marked as error in TODO.md
+- Current checkout flow: Cart -> Payment Dashboard -> Create Order
+- Proposed flow: Cart -> Orders Checkout -> Create Order
