@@ -141,8 +141,8 @@ public class OrderController {
 
     @PostMapping("/{id}/payment")
     public String updatePaymentStatus(@PathVariable Long id,
-                                     @RequestParam Order.PaymentStatus paymentStatus,
-                                     RedirectAttributes redirectAttributes) {
+                                      @RequestParam Order.PaymentStatus paymentStatus,
+                                      RedirectAttributes redirectAttributes) {
         try {
             Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
             order.setPaymentStatus(paymentStatus);
@@ -152,6 +152,30 @@ public class OrderController {
             redirectAttributes.addFlashAttribute("errorMessage", "Gagal memperbarui status pembayaran: " + e.getMessage());
         }
         return "redirect:/orders/supplier";
+    }
+
+    @PostMapping("/{id}/confirm-payment")
+    public String confirmPayment(@PathVariable Long id,
+                                 @AuthenticationPrincipal UserDetails userDetails,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            User buyer = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+
+            if (!order.getBuyer().getId().equals(buyer.getId())) {
+                throw new RuntimeException("Unauthorized access to order");
+            }
+
+            order.setPaymentStatus(Order.PaymentStatus.PAID);
+            order.setStatus(Order.Status.CONFIRMED);
+            orderService.updateOrder(order);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Pembayaran berhasil dikonfirmasi! Pesanan Anda sedang diproses.");
+            return "redirect:/buyer/orders";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengkonfirmasi pembayaran: " + e.getMessage());
+            return "redirect:/buyer/orders";
+        }
     }
 
     @PostMapping("/{id}/shipping")

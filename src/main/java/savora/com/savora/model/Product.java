@@ -3,6 +3,7 @@ package savora.com.savora.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
 @Entity
 @Table(name = "products")
 @Data
+@EqualsAndHashCode(exclude = "reviews")
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

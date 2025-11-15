@@ -2,11 +2,13 @@ package savora.com.savora.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.util.Set;
 
 @Entity
 @Table(name = "categories")
 @Data
+@EqualsAndHashCode(exclude = "products")
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

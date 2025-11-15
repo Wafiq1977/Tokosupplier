@@ -215,11 +215,11 @@
                                         </td>
                                         <td th:text="'Rp ' + ${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}"></td>
                                         <td>
-                                            <span class="badge" th:classappend="${order.status.name() == 'DELIVERED'} ? 'bg-success' :
-                                                ${order.status.name() == 'SHIPPED'} ? 'bg-info' :
-                                                ${order.status.name() == 'CONFIRMED'} ? 'bg-primary' :
-                                                ${order.status.name() == 'PENDING'} ? 'bg-warning' : 'bg-secondary'"
-                                                  th:text="${order.status.name()}"></span>
+                                            <span th:if="${order.status.name() == 'DELIVERED'}" class="badge bg-success" th:text="${order.status.name()}"></span>
+                                            <span th:if="${order.status.name() == 'SHIPPED'}" class="badge bg-info" th:text="${order.status.name()}"></span>
+                                            <span th:if="${order.status.name() == 'CONFIRMED'}" class="badge bg-primary" th:text="${order.status.name()}"></span>
+                                            <span th:if="${order.status.name() == 'PENDING'}" class="badge bg-warning" th:text="${order.status.name()}"></span>
+                                            <span th:if="${order.status.name() != 'DELIVERED' and order.status.name() != 'SHIPPED' and order.status.name() != 'CONFIRMED' and order.status.name() != 'PENDING'}" class="badge bg-secondary" th:text="${order.status.name()}"></span>
                                         </td>
                                         <td>
                                             <div th:if="${order.review != null}" class="d-flex align-items-center">

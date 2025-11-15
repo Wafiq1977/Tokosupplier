@@ -269,8 +269,11 @@
                                                 <td th:text="${order.buyer.companyName}"></td>
                                                 <td th:text="'Rp ' + ${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}"></td>
                                                 <td>
-                                                    <span class="badge" th:classappend="${order.status.name() == 'PENDING'} ? 'bg-warning' : ${order.status.name() == 'CONFIRMED'} ? 'bg-info' : ${order.status.name() == 'SHIPPED'} ? 'bg-primary' : ${order.status.name() == 'DELIVERED'} ? 'bg-success' : 'bg-secondary'"
-                                                          th:text="${order.status.name()}"></span>
+                                                    <span th:if="${order.status.name() == 'PENDING'}" class="badge bg-warning" th:text="${order.status.name()}"></span>
+                                                    <span th:if="${order.status.name() == 'CONFIRMED'}" class="badge bg-info" th:text="${order.status.name()}"></span>
+                                                    <span th:if="${order.status.name() == 'SHIPPED'}" class="badge bg-primary" th:text="${order.status.name()}"></span>
+                                                    <span th:if="${order.status.name() == 'DELIVERED'}" class="badge bg-success" th:text="${order.status.name()}"></span>
+                                                    <span th:if="${order.status.name() != 'PENDING' and order.status.name() != 'CONFIRMED' and order.status.name() != 'SHIPPED' and order.status.name() != 'DELIVERED'}" class="badge bg-secondary" th:text="${order.status.name()}"></span>
                                                 </td>
                                                 <td th:text="${#temporals.format(order.createdAt, 'dd MMM yyyy')}"></td>
                                                 <td>

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -23,7 +24,10 @@ public class Order {
     private User supplier;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private Set<OrderItem> orderItems;
+    private List<OrderItem> orderItems;
+
+    @Column(nullable = false)
+    private BigDecimal subtotalAmount;
 
     @Column(nullable = false)
     private BigDecimal totalAmount;

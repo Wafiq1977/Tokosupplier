@@ -60,8 +60,9 @@ public class OrderService {
         Order order = new Order();
         order.setBuyer(buyer);
         order.setSupplier(supplier);
-        order.setTotalAmount(totalAmount);
-        order.setOrderItems(new java.util.HashSet<>(items));
+        order.setSubtotalAmount(totalAmount);
+        order.setTotalAmount(totalAmount); // Will be updated with shipping cost later
+        order.setOrderItems(new java.util.ArrayList<>(items));
 
         // Set order reference in items
         for (OrderItem item : items) {

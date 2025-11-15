@@ -97,6 +97,9 @@ public class PaymentController {
                     break;
             }
 
+            // Update total amount including shipping
+            order.setTotalAmount(order.getSubtotalAmount().add(order.getShippingCost()));
+
             // Apply voucher discount if provided (placeholder for future implementation)
             if (voucherCode != null && !voucherCode.trim().isEmpty()) {
                 // TODO: Implement voucher validation and discount calculation
