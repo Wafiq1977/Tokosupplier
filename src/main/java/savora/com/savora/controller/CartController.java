@@ -135,9 +135,9 @@ public class CartController {
 
     @PostMapping("/update")
     public String updateQuantity(@RequestParam Long productId,
-                                @RequestParam Integer quantity,
-                                @AuthenticationPrincipal UserDetails userDetails,
-                                RedirectAttributes redirectAttributes) {
+                                 @RequestParam Integer quantity,
+                                 @AuthenticationPrincipal UserDetails userDetails,
+                                 RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
             return "redirect:/login";
         }
@@ -155,6 +155,38 @@ public class CartController {
         }
 
         return "redirect:/cart";
+    }
+
+    @PostMapping("/update-ajax")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<?> updateQuantityAjax(@RequestParam Long productId,
+                                                                        @RequestParam Integer quantity,
+                                                                        @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return org.springframework.http.ResponseEntity.status(401).body(java.util.Map.of("error", "Unauthorized"));
+        }
+
+        try {
+            User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            if (user == null) {
+                return org.springframework.http.ResponseEntity.status(401).body(java.util.Map.of("error", "User not found"));
+            }
+
+            cartService.updateQuantity(user, productId, quantity);
+
+            // Get updated cart totals
+            Long totalQuantity = cartService.getTotalQuantity(user);
+            java.math.BigDecimal totalPrice = cartService.getTotalPrice(user);
+
+            return org.springframework.http.ResponseEntity.ok(java.util.Map.of(
+                "status", "OK",
+                "message", "Quantity updated successfully",
+                "totalQuantity", totalQuantity,
+                "totalPrice", totalPrice
+            ));
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/remove")

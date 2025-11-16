@@ -97,10 +97,10 @@
                                     <img th:src="${item.product.imageUrl != null ? item.product.imageUrl : '/images/product-placeholder.jpg'}"
                                          alt="Product" class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
                                     <div class="flex-grow-1">
-                                        <h6 class="mb-1" th:text="${item.product.name}"></h6>
-                                        <small class="text-muted" th:text="'Supplier: ' + ${item.product.supplier.companyName}"></small>
+                                        <h6 class="mb-1" th:text="${item.product != null ? item.product.name : 'Produk tidak ditemukan'}"></h6>
+                                        <small class="text-muted" th:text="${item.product != null and item.product.supplier != null ? 'Supplier: ' + item.product.supplier.companyName : 'Supplier tidak ditemukan'}"></small>
                                         <div class="mt-2">
-                                            <span class="badge bg-light text-dark" th:text="${item.quantity + ' ' + item.product.unit}"></span>
+                                            <span class="badge bg-light text-dark" th:text="${item.product != null ? item.quantity + ' ' + item.product.unit : item.quantity + ' unit'}"></span>
                                             <span class="ms-3 fw-bold text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}"></span>
                                         </div>
                                     </div>
@@ -128,11 +128,11 @@
                                         </div>
                                         <div class="mb-3">
                                             <small class="text-muted">Metode Pembayaran:</small>
-                                            <div th:text="${detailOrder.paymentMethod.name()}"></div>
+                                            <div th:text="${detailOrder.paymentMethod != null ? detailOrder.paymentMethod.name() : 'Belum dipilih'}"></div>
                                         </div>
                                         <div class="mb-3">
                                             <small class="text-muted">Status:</small>
-                                            <span class="badge bg-warning" th:text="${detailOrder.status.name()}"></span>
+                                            <span class="badge bg-warning" th:text="${detailOrder.status != null ? detailOrder.status.name() : 'Unknown'}"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -142,9 +142,9 @@
                                                 <h6><i class="fas fa-info-circle me-2"></i>Informasi Pembayaran</h6>
                                                 <p class="mb-2">Silakan transfer ke rekening supplier berikut:</p>
                                                 <div class="bg-light p-3 rounded">
-                                                    <strong>Bank: <span th:text="${detailOrder.supplier.bankName} ?: 'Belum diatur'"></span></strong><br>
-                                                    <strong>No. Rekening: <span th:text="${detailOrder.supplier.bankAccountNumber} ?: 'Belum diatur'"></span></strong><br>
-                                                    <strong>Atas Nama: <span th:text="${detailOrder.supplier.companyName}"></span></strong>
+                                                    <strong>Bank: <span th:text="${detailOrder.supplier != null ? (detailOrder.supplier.bankName ?: 'Belum diatur') : 'Belum diatur'}"></span></strong><br>
+                                                    <strong>No. Rekening: <span th:text="${detailOrder.supplier != null ? (detailOrder.supplier.bankAccountNumber ?: 'Belum diatur') : 'Belum diatur'}"></span></strong><br>
+                                                    <strong>Atas Nama: <span th:text="${detailOrder.supplier != null ? detailOrder.supplier.companyName : 'Belum diatur'}"></span></strong>
                                                 </div>
                                                 <p class="mb-0 mt-2 text-muted">Setelah transfer, supplier akan mengkonfirmasi pembayaran dan memproses pengiriman.</p>
                                             </div>
@@ -200,20 +200,38 @@
                                             <span th:if="${order.status.name() == 'CONFIRMED'}" class="badge bg-info" th:text="${order.status.name()}"></span>
                                             <span th:if="${order.status.name() == 'SHIPPED'}" class="badge bg-primary" th:text="${order.status.name()}"></span>
                                             <span th:if="${order.status.name() == 'DELIVERED'}" class="badge bg-success" th:text="${order.status.name()}"></span>
-                                            <span th:if="${order.status.name() != 'PENDING' and order.status.name() != 'CONFIRMED' and order.status.name() != 'SHIPPED' and order.status.name() != 'DELIVERED'}" class="badge bg-secondary" th:text="${order.status.name()}"></span>
+                                            <span th:if="${order.status.name() == 'CANCELLED'}" class="badge bg-danger" th:text="${order.status.name()}"></span>
+                                            <span th:if="${order.status.name() != 'PENDING' and order.status.name() != 'CONFIRMED' and order.status.name() != 'SHIPPED' and order.status.name() != 'DELIVERED' and order.status.name() != 'CANCELLED'}" class="badge bg-secondary" th:text="${order.status.name()}"></span>
                                         </td>
                                         <td th:text="${#temporals.format(order.createdAt, 'dd MMM yyyy HH:mm')}"></td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                                        th:data-bs-target="'#orderDetailModal' + ${order.id}">
+                                                <a class="btn btn-outline-primary" th:href="@{'/orders/buyer/' + ${order.id} + '/detail'}">
                                                     <i class="fas fa-eye"></i> Detail
-                                                </button>
+                                                </a>
                                                 <div th:if="${order.status.name() == 'DELIVERED'}" class="ms-1">
                                                     <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal"
                                                             th:data-bs-target="'#reviewModal' + ${order.id}">
                                                         <i class="fas fa-star"></i> Review
                                                     </button>
+                                                </div>
+                                                <div th:if="${order.status.name() == 'PENDING' or order.status.name() == 'CONFIRMED'}" class="ms-1">
+                                                    <form th:action="@{'/orders/' + ${order.id} + '/cancel'}" method="post" style="display: inline;"
+                                                          onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')">
+                                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                            <i class="fas fa-times"></i> Batalkan
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                                <div th:if="${order.status.name() == 'DELIVERED' or order.status.name() == 'CANCELLED'}" class="ms-1">
+                                                    <form th:action="@{'/orders/' + ${order.id} + '/delete'}" method="post" style="display: inline;"
+                                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus riwayat pesanan ini? Tindakan ini tidak dapat dibatalkan.')">
+                                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                        <button type="submit" class="btn btn-outline-dark btn-sm">
+                                                            <i class="fas fa-trash"></i> Hapus
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </div>
                                         </td>
@@ -259,7 +277,8 @@
                                         <span th:if="${order.status.name() == 'CONFIRMED'}" class="badge bg-info" th:text="${order.status.name()}"></span>
                                         <span th:if="${order.status.name() == 'SHIPPED'}" class="badge bg-primary" th:text="${order.status.name()}"></span>
                                         <span th:if="${order.status.name() == 'DELIVERED'}" class="badge bg-success" th:text="${order.status.name()}"></span>
-                                        <span th:if="${order.status.name() != 'PENDING' and order.status.name() != 'CONFIRMED' and order.status.name() != 'SHIPPED' and order.status.name() != 'DELIVERED'}" class="badge bg-secondary" th:text="${order.status.name()}"></span>
+                                        <span th:if="${order.status.name() == 'CANCELLED'}" class="badge bg-danger" th:text="${order.status.name()}"></span>
+                                        <span th:if="${order.status.name() != 'PENDING' and order.status.name() != 'CONFIRMED' and order.status.name() != 'SHIPPED' and order.status.name() != 'DELIVERED' and order.status.name() != 'CANCELLED'}" class="badge bg-secondary" th:text="${order.status.name()}"></span>
                                     </td>
                                 </tr>
                                 <tr>
@@ -431,6 +450,15 @@
             // For now, just show an alert. In a real implementation, this would redirect to a payment gateway
             alert('Fitur pembayaran akan diintegrasikan dengan gateway pembayaran.');
         }
+
+        // Initialize modals when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure all modals are properly initialized
+            var modalElements = document.querySelectorAll('.modal');
+            modalElements.forEach(function(modal) {
+                new bootstrap.Modal(modal);
+            });
+        });
     </script>
 </body>
 </html>

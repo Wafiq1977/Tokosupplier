@@ -93,7 +93,7 @@
                     <div class="col-lg-8">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0">Produk di Keranjang (<span th:text="${totalQuantity}"></span> item)</h5>
+                                <h5 class="mb-0">Produk di Keranjang (<span id="cart-item-count" th:text="${totalQuantity}"></span> item)</h5>
                             </div>
                             <div class="card-body">
                                 <div th:each="item : ${cartItems}" class="cart-item mb-3 p-3 border rounded">
@@ -107,14 +107,21 @@
                                             <small class="text-muted" th:text="'Supplier: ' + ${item.product.supplier.companyName}"></small>
                                         </div>
                                         <div class="col-md-2">
-                                            <div class="input-group input-group-sm">
-                                                <button class="btn btn-outline-secondary" type="button"
-                                                        onclick="updateQuantity(this, -1)">-</button>
+                                            <div class="input-group input-group-sm" th:data-product-id="${item.product.id}"
+                                                 th:data-stock="${item.product.stockQuantity}" th:data-unit-price="${item.unitPrice}">
+                                                <button class="btn btn-outline-secondary quantity-btn" type="button" data-change="-1">-</button>
                                                 <input type="number" class="form-control text-center quantity-input"
-                                                       th:value="${item.quantity}" min="1" max="99">
-                                                <button class="btn btn-outline-secondary" type="button"
-                                                        onclick="updateQuantity(this, 1)">+</button>
+                                                       th:value="${item.quantity}" min="1"
+                                                       th:max="${item.product.stockQuantity}" step="1">
+                                                <button class="btn btn-outline-secondary quantity-btn" type="button" data-change="1">+</button>
                                             </div>
+                                            <!-- Hidden form for quantity update -->
+                                            <form th:action="@{'/cart/update'}" method="post" class="d-none update-form"
+                                                  th:id="'update-form-' + ${item.product.id}">
+                                                <input type="hidden" name="productId" th:value="${item.product.id}" />
+                                                <input type="hidden" name="quantity" class="quantity-value" th:value="${item.quantity}" />
+                                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                            </form>
                                         </div>
                                         <div class="col-md-2">
                                             <strong class="text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
@@ -151,16 +158,16 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Total Item:</span>
-                                    <strong th:text="${totalQuantity}"></strong>
+                                    <strong id="total-quantity" th:text="${totalQuantity}"></strong>
                                 </div>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span>Total Harga:</span>
-                                    <strong class="text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(totalPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                    <strong id="total-price" class="text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(totalPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
                                 </div>
                                 <hr>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span class="h5">Total Pembayaran:</span>
-                                    <strong class="text-primary h5" th:text="'Rp ' + ${#numbers.formatDecimal(totalPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                    <strong id="total-payment" class="text-primary h5" th:text="'Rp ' + ${#numbers.formatDecimal(totalPrice, 0, 'COMMA', 0, 'POINT')}"></strong>
                                 </div>
                                 <a th:href="@{/orders/checkout}" class="btn btn-primary w-100 mb-2">
                                     <i class="fas fa-credit-card me-2"></i>Lanjut ke Checkout
@@ -249,26 +256,171 @@
     <script th:src="@{/js/main.js}"></script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Event delegation for quantity buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('quantity-btn')) {
+                    e.preventDefault();
+                    const button = e.target;
+                    const change = parseInt(button.getAttribute('data-change'));
+                    updateQuantity(button, change);
+                }
+            });
+
+            // Event listener for quantity input changes
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('quantity-input')) {
+                    updateQuantityInput(e.target);
+                }
+            });
+        });
+
         function updateQuantity(button, change) {
-            const input = button.parentElement.querySelector('.quantity-input');
+            const container = button.closest('.input-group');
+            const input = container.querySelector('.quantity-input');
+            const stock = parseInt(container.getAttribute('data-stock'));
+            const productId = container.getAttribute('data-product-id');
+            const unitPrice = parseFloat(container.getAttribute('data-unit-price'));
+
             let currentValue = parseInt(input.value);
             let newValue = currentValue + change;
 
-            if (newValue >= 1 && newValue <= 99) {
-                input.value = newValue;
-
-                // Auto-submit form to update quantity
-                const form = button.closest('.cart-item').querySelector('form[action*="update"]');
-                if (form) {
-                    const productId = form.querySelector('input[name="productId"]').value;
-                    const quantityInput = form.querySelector('input[name="quantity"]');
-
-                    if (quantityInput) {
-                        quantityInput.value = newValue;
-                        form.submit();
-                    }
-                }
+            // Validate quantity
+            if (newValue < 1) {
+                showError('Kuantitas minimal 1');
+                return;
             }
+
+            if (newValue > stock) {
+                showError('Stok tidak mencukupi. Maksimal ' + stock + ' item');
+                return;
+            }
+
+            // Update input value
+            input.value = newValue;
+
+            // Update cart via AJAX
+            updateCartAjax(productId, newValue, unitPrice);
+        }
+
+        function updateQuantityInput(input) {
+            const container = input.closest('.input-group');
+            const stock = parseInt(container.getAttribute('data-stock'));
+            const productId = container.getAttribute('data-product-id');
+            const unitPrice = parseFloat(container.getAttribute('data-unit-price'));
+
+            let newValue = parseInt(input.value);
+
+            // Validate quantity
+            if (isNaN(newValue) || newValue < 1) {
+                showError('Kuantitas harus berupa angka positif');
+                input.value = 1;
+                newValue = 1;
+            } else if (newValue > stock) {
+                showError('Stok tidak mencukupi. Maksimal ' + stock + ' item');
+                input.value = stock;
+                newValue = stock;
+            }
+
+            // Update cart via AJAX
+            updateCartAjax(productId, newValue, unitPrice);
+        }
+
+        function updateCartAjax(productId, quantity, unitPrice) {
+            const csrfToken = document.querySelector('input[name="_csrf"]').value;
+            const csrfHeader = document.querySelector('input[name="_csrf"]').getAttribute('name');
+
+            fetch('/cart/update-ajax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [csrfHeader]: csrfToken
+                },
+                body: new URLSearchParams({
+                    productId: productId,
+                    quantity: quantity
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'OK') {
+                    // Update totals in UI
+                    updateCartTotalsUI(data.totalQuantity, data.totalPrice);
+                    showSuccess('Kuantitas berhasil diperbarui');
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Gagal memperbarui kuantitas: ' + error.message);
+                // Reload page on error to revert changes
+                location.reload();
+            });
+        }
+
+        function updateCartTotalsUI(totalQuantity, totalPrice) {
+            // Update total quantity in summary
+            const totalQuantityEl = document.getElementById('total-quantity');
+            if (totalQuantityEl) {
+                totalQuantityEl.textContent = totalQuantity;
+            }
+
+            // Update total price - format as currency
+            const formattedPrice = 'Rp ' + new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(totalPrice);
+
+            const totalPriceEl = document.getElementById('total-price');
+            if (totalPriceEl) {
+                totalPriceEl.textContent = formattedPrice;
+            }
+
+            const totalPaymentEl = document.getElementById('total-payment');
+            if (totalPaymentEl) {
+                totalPaymentEl.textContent = formattedPrice;
+            }
+
+            // Update cart header count
+            const cartItemCountEl = document.getElementById('cart-item-count');
+            if (cartItemCountEl) {
+                cartItemCountEl.textContent = totalQuantity;
+            }
+        }
+
+        function showSuccess(message) {
+            showMessage(message, 'success');
+        }
+
+        function showError(message) {
+            showMessage(message, 'danger');
+        }
+
+        function showMessage(message, type) {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+
+            // Create new alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            // Insert at the top of the container
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
         }
     </script>
 </body>

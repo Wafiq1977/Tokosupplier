@@ -95,4 +95,21 @@ public class OrderService {
                 .limit(limit)
                 .toList();
     }
+
+    @Transactional
+    public void deleteOrder(Long orderId, User buyer) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Verify that the buyer owns this order
+        if (!order.getBuyer().getId().equals(buyer.getId())) {
+            throw new RuntimeException("Unauthorized access to order");
+        }
+
+        // Only allow deletion of completed or cancelled orders
+        if (order.getStatus() != Order.Status.DELIVERED && order.getStatus() != Order.Status.CANCELLED) {
+            throw new RuntimeException("Hanya pesanan yang sudah selesai atau dibatalkan yang dapat dihapus");
+        }
+
+        orderRepository.delete(order);
+    }
 }

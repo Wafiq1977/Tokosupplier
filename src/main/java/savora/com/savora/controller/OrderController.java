@@ -100,9 +100,9 @@ public class OrderController {
 
     @GetMapping("/buyer")
     public String buyerOrders(@AuthenticationPrincipal UserDetails userDetails,
-                             @RequestParam(required = false) Long highlight,
-                             @RequestParam(required = false) Long showDetail,
-                             Model model) {
+                              @RequestParam(required = false) Long highlight,
+                              @RequestParam(required = false) Long showDetail,
+                              Model model) {
         User buyer = userService.findByUsername(userDetails.getUsername()).orElse(null);
         if (buyer != null) {
             model.addAttribute("orders", orderService.getOrdersByBuyer(buyer));
@@ -118,6 +118,29 @@ public class OrderController {
         }
         return "buyer/orders";
     }
+
+    @GetMapping("/buyer/{id}/detail")
+    public String buyerOrderDetail(@PathVariable Long id,
+                                   @AuthenticationPrincipal UserDetails userDetails,
+                                   Model model,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            User buyer = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+
+            if (!order.getBuyer().getId().equals(buyer.getId())) {
+                throw new RuntimeException("Unauthorized access to order");
+            }
+
+            model.addAttribute("detailOrder", order);
+            model.addAttribute("orders", orderService.getOrdersByBuyer(buyer));
+            return "buyer/orders";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengambil detail pesanan: " + e.getMessage());
+            return "redirect:/buyer/orders";
+        }
+    }
+
 
     @GetMapping("/supplier")
     public String supplierOrders(@AuthenticationPrincipal UserDetails userDetails, Model model) {
@@ -174,6 +197,50 @@ public class OrderController {
             return "redirect:/buyer/orders";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengkonfirmasi pembayaran: " + e.getMessage());
+            return "redirect:/buyer/orders";
+        }
+    }
+
+    @PostMapping("/{id}/cancel")
+    public String cancelOrder(@PathVariable Long id,
+                              @AuthenticationPrincipal UserDetails userDetails,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            User buyer = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+
+            if (!order.getBuyer().getId().equals(buyer.getId())) {
+                throw new RuntimeException("Unauthorized access to order");
+            }
+
+            // Only allow cancellation for pending or confirmed orders
+            if (order.getStatus() != Order.Status.PENDING && order.getStatus() != Order.Status.CONFIRMED) {
+                throw new RuntimeException("Pesanan tidak dapat dibatalkan pada status saat ini");
+            }
+
+            order.setStatus(Order.Status.CANCELLED);
+            orderService.updateOrder(order);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Pesanan berhasil dibatalkan.");
+            return "redirect:/buyer/orders";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal membatalkan pesanan: " + e.getMessage());
+            return "redirect:/buyer/orders";
+        }
+    }
+
+    @PostMapping("/{id}/delete")
+    public String deleteOrder(@PathVariable Long id,
+                              @AuthenticationPrincipal UserDetails userDetails,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            User buyer = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            orderService.deleteOrder(id, buyer);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Riwayat pesanan berhasil dihapus.");
+            return "redirect:/buyer/orders";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menghapus riwayat pesanan: " + e.getMessage());
             return "redirect:/buyer/orders";
         }
     }
