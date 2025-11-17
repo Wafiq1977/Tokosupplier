@@ -49,14 +49,26 @@ public class SupplierReviewsController {
         long twoStarReviews = supplierReviews.stream().filter(r -> r.getRating() == 2).count();
         long oneStarReviews = supplierReviews.stream().filter(r -> r.getRating() == 1).count();
 
-        model.addAttribute("supplierReviews", supplierReviews);
-        model.addAttribute("totalReviews", totalReviews);
-        model.addAttribute("averageRating", String.format("%.1f", averageRating));
-        model.addAttribute("fiveStarReviews", fiveStarReviews);
-        model.addAttribute("fourStarReviews", fourStarReviews);
-        model.addAttribute("threeStarReviews", threeStarReviews);
-        model.addAttribute("twoStarReviews", twoStarReviews);
-        model.addAttribute("oneStarReviews", oneStarReviews);
+        // Ensure default values if no reviews
+        if (supplierReviews.isEmpty()) {
+            model.addAttribute("supplierReviews", supplierReviews);
+            model.addAttribute("totalReviews", 0L);
+            model.addAttribute("averageRating", "0.0");
+            model.addAttribute("fiveStarReviews", 0L);
+            model.addAttribute("fourStarReviews", 0L);
+            model.addAttribute("threeStarReviews", 0L);
+            model.addAttribute("twoStarReviews", 0L);
+            model.addAttribute("oneStarReviews", 0L);
+        } else {
+            model.addAttribute("supplierReviews", supplierReviews);
+            model.addAttribute("totalReviews", totalReviews);
+            model.addAttribute("averageRating", String.format("%.1f", averageRating));
+            model.addAttribute("fiveStarReviews", fiveStarReviews);
+            model.addAttribute("fourStarReviews", fourStarReviews);
+            model.addAttribute("threeStarReviews", threeStarReviews);
+            model.addAttribute("twoStarReviews", twoStarReviews);
+            model.addAttribute("oneStarReviews", oneStarReviews);
+        }
 
         return "supplier/reviews";
     }

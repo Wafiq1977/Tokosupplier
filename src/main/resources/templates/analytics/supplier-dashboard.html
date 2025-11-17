@@ -208,30 +208,30 @@
                                     <tr th:each="product : ${analytics.get('topProducts')}">
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <img th:src="${product.imageUrl != null ? product.imageUrl : '/images/product-placeholder.jpg'}"
+                                                <img th:src="${product.get('imageUrl') != null ? product.get('imageUrl') : '/images/product-placeholder.jpg'}"
                                                      alt="Product" class="rounded me-3" style="width: 40px; height: 40px; object-fit: cover;">
                                                 <div>
-                                                    <h6 class="mb-0" th:text="${product.name}"></h6>
-                                                    <small class="text-muted" th:text="'Rp ' + ${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')}"></small>
+                                                    <h6 class="mb-0" th:text="${product.get('name')}"></h6>
+                                                    <small class="text-muted" th:text="'Rp ' + ${#numbers.formatDecimal(product.get('price'), 0, 'COMMA', 0, 'POINT')}"></small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td th:text="${product.salesCount != null ? product.salesCount : 0}"></td>
-                                        <td th:text="'Rp ' + ${#numbers.formatDecimal(product.revenue, 0, 'COMMA', 0, 'POINT')}"></td>
+                                        <td th:text="${product.get('salesCount')}"></td>
+                                        <td th:text="'Rp ' + ${#numbers.formatDecimal(product.get('revenue'), 0, 'COMMA', 0, 'POINT')}"></td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <span th:text="${product.averageRating != null ? #numbers.formatDecimal(product.averageRating, 1, 1) : '0.0'}"></span>
+                                                <span th:text="${#numbers.formatDecimal(product.get('averageRating'), 1, 1)}"></span>
                                                 <i class="fas fa-star text-warning ms-1"></i>
                                             </div>
                                         </td>
                                         <td>
-                                            <span th:if="${product.salesTrend > 0}" class="badge bg-success">
-                                                <i class="fas fa-arrow-up me-1"></i><span th:text="${product.salesTrend}"></span>%
+                                            <span th:if="${product.get('salesTrend') > 0}" class="badge bg-success">
+                                                <i class="fas fa-arrow-up me-1"></i><span th:text="${product.get('salesTrend')}"></span>%
                                             </span>
-                                            <span th:if="${product.salesTrend < 0}" class="badge bg-danger">
-                                                <i class="fas fa-arrow-down me-1"></i><span th:text="${Math.abs(product.salesTrend)}"></span>%
+                                            <span th:if="${product.get('salesTrend') < 0}" class="badge bg-danger">
+                                                <i class="fas fa-arrow-down me-1"></i><span th:text="${Math.abs(product.get('salesTrend'))}"></span>%
                                             </span>
-                                            <span th:if="${product.salesTrend == 0}" class="badge bg-secondary">
+                                            <span th:if="${product.get('salesTrend') == 0}" class="badge bg-secondary">
                                                 <i class="fas fa-minus me-1"></i>0%
                                             </span>
                                         </td>
@@ -244,29 +244,6 @@
             </div>
         </div>
 
-        <!-- Customer Insights -->
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Lokasi Pembeli</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="customerLocationChart" height="250"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Waktu Pembelian Terbaik</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="purchaseTimeChart" height="250"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Footer -->
@@ -288,13 +265,13 @@
     <!-- Custom JS -->
     <script th:src="@{/js/main.js}"></script>
 
-    <script>
-        // Sample data - in real implementation, this would come from the backend
+    <script th:inline="javascript">
+        // Data from backend
         const salesData = {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: /*[[${analytics.chartLabels}]]*/ [],
             datasets: [{
                 label: 'Pendapatan (Rp)',
-                data: [12000000, 19000000, 15000000, 25000000, 22000000, 30000000],
+                data: /*[[${analytics.chartData}]]*/ [],
                 borderColor: 'rgb(75, 192, 192)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 tension: 0.1
@@ -302,9 +279,9 @@
         };
 
         const orderStatusData = {
-            labels: ['Selesai', 'Dikirim', 'Diproses', 'Pending'],
+            labels: /*[[${analytics.statusLabels}]]*/ [],
             datasets: [{
-                data: [45, 25, 20, 10],
+                data: /*[[${analytics.statusData}]]*/ [],
                 backgroundColor: [
                     'rgb(40, 167, 69)',
                     'rgb(23, 162, 184)',
@@ -314,23 +291,9 @@
             }]
         };
 
-        const customerLocationData = {
-            labels: ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Lainnya'],
-            datasets: [{
-                label: 'Jumlah Pembeli',
-                data: [35, 25, 20, 10, 5, 5],
-                backgroundColor: 'rgba(54, 162, 235, 0.8)'
-            }]
-        };
+        console.log('Sales Data:', salesData);
+        console.log('Order Status Data:', orderStatusData);
 
-        const purchaseTimeData = {
-            labels: ['Pagi (06-12)', 'Siang (12-18)', 'Malam (18-24)', 'Dini Hari (00-06)'],
-            datasets: [{
-                label: 'Jumlah Pesanan',
-                data: [15, 45, 30, 10],
-                backgroundColor: 'rgba(153, 102, 255, 0.8)'
-            }]
-        };
 
         // Initialize charts
         document.addEventListener('DOMContentLoaded', function() {
@@ -372,43 +335,6 @@
                 }
             });
 
-            // Customer Location Chart
-            new Chart(document.getElementById('customerLocationChart'), {
-                type: 'bar',
-                data: customerLocationData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-
-            // Purchase Time Chart
-            new Chart(document.getElementById('purchaseTimeChart'), {
-                type: 'bar',
-                data: purchaseTimeData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
         });
 
         function updateAnalytics() {

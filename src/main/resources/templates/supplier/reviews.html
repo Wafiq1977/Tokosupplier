@@ -100,7 +100,7 @@
                         <p class="stats-label text-muted">5 Bintang</p>
                         <div class="progress mt-2" style="height: 6px;">
                             <div class="progress-bar bg-warning" role="progressbar"
-                                 th:style="'width: ' + ${totalReviews > 0 ? (fiveStarReviews * 100 / totalReviews) : 0} + '%'"
+                                 th:style="'width: ' + ${totalReviews > 0 ? (fiveStarReviews * 100.0 / totalReviews) : 0} + '%'"
                                  th:aria-valuenow="${fiveStarReviews}" aria-valuemin="0" th:aria-valuemax="${totalReviews}"></div>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                         <p class="stats-label text-muted">4 Bintang</p>
                         <div class="progress mt-2" style="height: 6px;">
                             <div class="progress-bar bg-info" role="progressbar"
-                                 th:style="'width: ' + ${totalReviews > 0 ? (fourStarReviews * 100 / totalReviews) : 0} + '%'"
+                                 th:style="'width: ' + ${totalReviews > 0 ? (fourStarReviews * 100.0 / totalReviews) : 0} + '%'"
                                  th:aria-valuenow="${fourStarReviews}" aria-valuemin="0" th:aria-valuemax="${totalReviews}"></div>
                         </div>
                     </div>
@@ -211,8 +211,8 @@
                                     <div class="fw-bold" th:text="${review.buyer.companyName}"></div>
                                 </div>
                                 <div class="mb-2">
-                                    <small class="text-muted">Pesanan:</small>
-                                    <div th:text="'#' + ${review.orderId != null ? review.orderId : 'N/A'}"></div>
+                                    <small class="text-muted">Produk:</small>
+                                    <div th:text="${review.product.name}"></div>
                                 </div>
                                 <div class="review-status">
                                     <span class="badge bg-success">Terverifikasi</span>

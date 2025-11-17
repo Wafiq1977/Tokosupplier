@@ -23,12 +23,19 @@ public class AnalyticsController {
 
     @GetMapping("/supplier")
     public String supplierAnalytics(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User supplier = userService.findByUsername(userDetails.getUsername()).orElse(null);
-        if (supplier != null && supplier.getRole() == User.Role.SUPPLIER) {
-            model.addAttribute("analytics", analyticsService.getSupplierAnalytics(supplier));
-            return "analytics/supplier-dashboard";
+        try {
+            User supplier = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            if (supplier != null && supplier.getRole() == User.Role.SUPPLIER) {
+                model.addAttribute("analytics", analyticsService.getSupplierAnalytics(supplier));
+                return "analytics/supplier-dashboard";
+            }
+            return "redirect:/dashboard";
+        } catch (Exception e) {
+            // Log error and redirect
+            System.err.println("Error loading supplier analytics: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/dashboard";
         }
-        return "redirect:/dashboard";
     }
 
     @GetMapping("/buyer")
