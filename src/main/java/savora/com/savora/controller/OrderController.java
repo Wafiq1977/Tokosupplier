@@ -162,6 +162,32 @@ public class OrderController {
         return "redirect:/orders/supplier";
     }
 
+    @PostMapping("/{id}/status-ajax")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<?> updateOrderStatusAjax(@PathVariable Long id,
+                                                                           @RequestParam Order.Status status,
+                                                                           @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // Verify supplier owns this order
+            User supplier = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+
+            if (!order.getSupplier().getId().equals(supplier.getId())) {
+                return org.springframework.http.ResponseEntity.status(403).body(java.util.Map.of("error", "Unauthorized access to order"));
+            }
+
+            orderService.updateOrderStatus(id, status);
+            return org.springframework.http.ResponseEntity.ok(java.util.Map.of(
+                "status", "OK",
+                "message", "Order status updated successfully",
+                "orderId", id,
+                "newStatus", status.name()
+            ));
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/{id}/payment")
     public String updatePaymentStatus(@PathVariable Long id,
                                       @RequestParam Order.PaymentStatus paymentStatus,

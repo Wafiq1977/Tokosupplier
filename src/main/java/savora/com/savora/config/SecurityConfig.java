@@ -26,7 +26,8 @@ public class SecurityConfig {
                 .requestMatchers("/", "/register", "/login", "/logout", "/css/**", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/products/**").permitAll() // allow product detail and API for everyone
                 .requestMatchers("/cart/count").permitAll()
-                .requestMatchers("/cart/add", "/orders/**", "/buyer/**").hasRole("BUYER")
+                .requestMatchers("/cart/add", "/buyer/**").hasRole("BUYER")
+                .requestMatchers("/orders/**").hasAnyRole("BUYER", "SUPPLIER")
                 .requestMatchers("/supplier/**").hasRole("SUPPLIER")
                 .anyRequest().authenticated()
             )

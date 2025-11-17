@@ -123,8 +123,8 @@
                                         </td>
                                         <td>
                                             <div>
-                                                <strong th:text="${order.buyer.companyName}"></strong><br>
-                                                <small class="text-muted" th:text="${order.shippingAddress}"></small>
+                                                <strong th:text="${order.buyer != null ? order.buyer.companyName : 'Pembeli tidak ditemukan'}"></strong><br>
+                                                <small class="text-muted" th:text="${order.shippingAddress ?: 'Alamat tidak tersedia'}"></small>
                                             </div>
                                         </td>
                                         <td>
@@ -151,7 +151,7 @@
                                                     <i class="fas fa-eye"></i> Detail
                                                 </button>
                                                 <div th:if="${order.status.name() == 'PENDING'}" class="ms-1">
-                                                    <form th:action="@{'/orders/' + ${order.id} + '/status'}" method="post" style="display: inline;">
+                                                    <form th:action="@{'/orders/' + ${order.id} + '/status'}" method="post" class="status-update-form" style="display: inline;">
                                                         <input type="hidden" name="status" value="CONFIRMED" />
                                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                                         <button type="submit" class="btn btn-outline-success btn-sm">
@@ -204,15 +204,15 @@
                             <table class="table table-sm">
                                 <tr>
                                     <td>Nama:</td>
-                                    <td th:text="${order.buyer.companyName}"></td>
+                                    <td th:text="${order.buyer != null ? order.buyer.companyName : 'Pembeli tidak ditemukan'}"></td>
                                 </tr>
                                 <tr>
                                     <td>Email:</td>
-                                    <td th:text="${order.buyer.email}"></td>
+                                    <td th:text="${order.buyer != null ? order.buyer.email : 'Email tidak tersedia'}"></td>
                                 </tr>
                                 <tr>
                                     <td>Telepon:</td>
-                                    <td th:text="${order.buyer.phoneNumber}"></td>
+                                    <td th:text="${order.buyer != null ? order.buyer.phoneNumber : 'Telepon tidak tersedia'}"></td>
                                 </tr>
                             </table>
                         </div>
@@ -272,7 +272,7 @@
                              alt="Product" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
                         <div class="flex-grow-1">
                             <h6 class="mb-1" th:text="${item.product.name}"></h6>
-                            <small class="text-muted" th:text="'Kategori: ' + ${item.product.category.name}"></small>
+                            <small class="text-muted" th:text="${item.product != null and item.product.category != null ? 'Kategori: ' + item.product.category.name : 'Kategori tidak tersedia'}"></small>
                         </div>
                         <div class="text-end">
                             <div th:text="${item.quantity + ' ' + item.product.unit}"></div>
@@ -381,21 +381,148 @@
     <script th:src="@{/js/main.js}"></script>
 
     <script>
-        // Filter functionality
-        document.querySelectorAll('input[name="statusFilter"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const selectedStatus = this.id;
-                const rows = document.querySelectorAll('.order-row');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter functionality
+            document.querySelectorAll('input[name="statusFilter"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const selectedStatus = this.id;
+                    const rows = document.querySelectorAll('.order-row');
 
-                rows.forEach(row => {
-                    if (selectedStatus === 'all' || row.getAttribute('data-status') === selectedStatus.toUpperCase()) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
+                    rows.forEach(row => {
+                        if (selectedStatus === 'all' || row.getAttribute('data-status') === selectedStatus.toUpperCase()) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
                 });
             });
+
+            // AJAX status update functionality
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (form.matches('form[action*="status"]')) {
+                    e.preventDefault();
+                    updateOrderStatusAjax(form);
+                }
+            });
         });
+
+        function updateOrderStatusAjax(form) {
+            const formData = new FormData(form);
+            const orderId = form.action.split('/').pop();
+            const status = formData.get('status');
+
+            const csrfToken = document.querySelector('input[name="_csrf"]').value;
+            const csrfHeader = document.querySelector('input[name="_csrf"]').getAttribute('name');
+
+            fetch(`/orders/${orderId}/status-ajax`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [csrfHeader]: csrfToken
+                },
+                body: new URLSearchParams({
+                    status: status
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'OK') {
+                    // Update status badge in UI
+                    updateOrderStatusUI(orderId, data.newStatus);
+                    showSuccess('Status pesanan berhasil diperbarui');
+
+                    // Update action buttons based on new status
+                    updateActionButtons(orderId, data.newStatus);
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Gagal memperbarui status pesanan: ' + error.message);
+            });
+        }
+
+        function updateOrderStatusUI(orderId, newStatus) {
+            const statusBadge = document.querySelector(`#orderDetailModal${orderId} .badge`);
+            if (statusBadge) {
+                // Remove existing classes
+                statusBadge.className = 'badge';
+
+                // Add appropriate class and text based on status
+                switch (newStatus) {
+                    case 'PENDING':
+                        statusBadge.classList.add('bg-warning');
+                        break;
+                    case 'CONFIRMED':
+                        statusBadge.classList.add('bg-info');
+                        break;
+                    case 'SHIPPED':
+                        statusBadge.classList.add('bg-primary');
+                        break;
+                    case 'DELIVERED':
+                        statusBadge.classList.add('bg-success');
+                        break;
+                    case 'CANCELLED':
+                        statusBadge.classList.add('bg-danger');
+                        break;
+                    default:
+                        statusBadge.classList.add('bg-secondary');
+                }
+                statusBadge.textContent = newStatus;
+            }
+
+            // Update data-status attribute for filtering
+            const orderRow = document.querySelector(`tr[data-status]`);
+            if (orderRow) {
+                orderRow.setAttribute('data-status', newStatus);
+            }
+        }
+
+        function updateActionButtons(orderId, newStatus) {
+            const actionCell = document.querySelector(`tr[data-status="${newStatus}"] td:last-child`);
+            if (actionCell) {
+                // This would need more complex logic to update buttons based on status
+                // For now, we'll reload the page to show updated buttons
+                setTimeout(() => location.reload(), 1000);
+            }
+        }
+
+        function showSuccess(message) {
+            showMessage(message, 'success');
+        }
+
+        function showError(message) {
+            showMessage(message, 'danger');
+        }
+
+        function showMessage(message, type) {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+
+            // Create new alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            // Insert at the top of the container
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
     </script>
 </body>
 </html>
