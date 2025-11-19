@@ -104,4 +104,10 @@ public class ProductService {
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
+
+    // Get product name suggestions for autocomplete
+    public List<String> getProductNameSuggestions(String query, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return productRepository.findProductNameSuggestionsLimited(query, pageable);
+    }
 }

@@ -6,10 +6,75 @@ import savora.com.savora.service.ProductService;
 import savora.com.savora.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+// DTO for product in search results
+class ProductSearchDTO {
+    private Long id;
+    private String name;
+    private String description;
+    private BigDecimal price;
+    private Integer stock;
+    private String imageUrl;
+    private Double averageRating;
+    private String supplierCompanyName;
+
+    public ProductSearchDTO(Product product) {
+        this.id = product.getId();
+        this.name = product.getName();
+        this.description = product.getDescription();
+        this.price = product.getPrice();
+        this.stock = product.getStockQuantity();
+        this.imageUrl = product.getImageUrl();
+        this.averageRating = product.getAverageRating();
+        this.supplierCompanyName = product.getSupplier().getCompanyName();
+    }
+
+    // Getters
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public BigDecimal getPrice() { return price; }
+    public Integer getStock() { return stock; }
+    public String getImageUrl() { return imageUrl; }
+    public Double getAverageRating() { return averageRating; }
+    public String getSupplierCompanyName() { return supplierCompanyName; }
+}
+
+// Response class for search API
+class SearchResponse {
+    private List<ProductSearchDTO> products;
+    private int currentPage;
+    private int totalPages;
+    private long totalItems;
+    private boolean hasContent;
+
+    // Constructor
+    public SearchResponse(List<Product> products, int currentPage, int totalPages, long totalItems, boolean hasContent) {
+        this.products = products.stream().map(ProductSearchDTO::new).collect(Collectors.toList());
+        this.currentPage = currentPage;
+        this.totalPages = totalPages;
+        this.totalItems = totalItems;
+        this.hasContent = hasContent;
+    }
+
+    // Getters
+    public List<ProductSearchDTO> getProducts() { return products; }
+    public int getCurrentPage() { return currentPage; }
+    public int getTotalPages() { return totalPages; }
+    public long getTotalItems() { return totalItems; }
+    public boolean isHasContent() { return hasContent; }
+}
 
 @Controller
 public class HomeController {
@@ -69,6 +134,38 @@ public class HomeController {
         // Always add categories for navigation
         model.addAttribute("categories", categoryService.getAllCategories());
         return "home";
+    }
+
+    @GetMapping("/api/search-products")
+    @ResponseBody
+    public ResponseEntity<SearchResponse> searchProductsApi(@RequestParam(value = "search", required = false) String search,
+                                                           @RequestParam(value = "category", required = false) Long categoryId,
+                                                           @RequestParam(value = "page", defaultValue = "0") int page,
+                                                           @RequestParam(value = "size", defaultValue = "12") int size) {
+
+        Page<Product> productPage = productService.searchProductsWithFilters(search, categoryId, null, null, null, page, size, "id", "desc");
+
+        SearchResponse response = new SearchResponse(
+            productPage.getContent(),
+            page,
+            productPage.getTotalPages(),
+            productPage.getTotalElements(),
+            !productPage.getContent().isEmpty()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/api/search-suggestions")
+    @ResponseBody
+    public ResponseEntity<List<String>> searchSuggestionsApi(@RequestParam(value = "q", required = false) String query,
+                                                            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        if (query == null || query.trim().length() < 1) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        List<String> suggestions = productService.getProductNameSuggestions(query.trim(), limit);
+        return ResponseEntity.ok(suggestions);
     }
 
     // Login and register mappings moved to AuthController

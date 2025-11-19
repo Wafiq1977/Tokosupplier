@@ -39,4 +39,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // Products with low stock
     @Query("SELECT p FROM Product p WHERE p.stockQuantity < 10 ORDER BY p.stockQuantity ASC")
     List<Product> findLowStockProducts();
+
+    // Product name suggestions for autocomplete
+    @Query("SELECT DISTINCT p.name FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) ORDER BY p.name ASC")
+    List<String> findProductNameSuggestionsLimited(String query, org.springframework.data.domain.Pageable pageable);
 }
