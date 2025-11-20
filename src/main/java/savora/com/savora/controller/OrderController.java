@@ -151,6 +151,28 @@ public class OrderController {
         return "supplier/orders";
     }
 
+    @GetMapping("/supplier/{id}/detail")
+    public String supplierOrderDetail(@PathVariable Long id,
+                                      @AuthenticationPrincipal UserDetails userDetails,
+                                      Model model,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            User supplier = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+            Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+
+            if (!order.getSupplier().getId().equals(supplier.getId())) {
+                throw new RuntimeException("Unauthorized access to order");
+            }
+
+            model.addAttribute("detailOrder", order);
+            model.addAttribute("orders", orderService.getOrdersBySupplier(supplier));
+            return "supplier/order-detail";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengambil detail pesanan: " + e.getMessage());
+            return "redirect:/orders/supplier";
+        }
+    }
+
     @PostMapping("/{id}/status")
     public String updateOrderStatus(@PathVariable Long id, @RequestParam Order.Status status, RedirectAttributes redirectAttributes) {
         try {

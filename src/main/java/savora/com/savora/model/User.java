@@ -34,6 +34,7 @@ public class User {
     private String postalCode;
     private String avatarUrl;
     private String bankAccountNumber;
+    private String bankAccountName;
     private String bankName;
 
     @Column(name = "created_at")

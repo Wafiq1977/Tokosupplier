@@ -146,10 +146,9 @@
                                         <td th:text="${#temporals.format(order.createdAt, 'dd MMM yyyy HH:mm')}"></td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                                        th:data-bs-target="'#orderDetailModal' + ${order.id}">
+                                                <a class="btn btn-outline-primary" th:href="@{'/orders/supplier/' + ${order.id} + '/detail'}">
                                                     <i class="fas fa-eye"></i> Detail
-                                                </button>
+                                                </a>
                                                 <div th:if="${order.status.name() == 'PENDING'}" class="ms-1">
                                                     <form th:action="@{'/orders/' + ${order.id} + '/status'}" method="post" class="status-update-form" style="display: inline;">
                                                         <input type="hidden" name="status" value="CONFIRMED" />

@@ -15,6 +15,33 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
+    <style>
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .suggestion-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .suggestion-item:hover, .suggestion-item.active {
+            background-color: #f8f9fa;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+
     <!-- CSRF Token for AJAX -->
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
@@ -106,7 +133,7 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="hero-image">
-                        <img src="https://via.placeholder.com/600x400/4CAF50/FFFFFF?text=Savora+Hero" alt="Savora Platform" class="img-fluid rounded-3 shadow">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGNBRjUwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zZW0iPkRhdGE6IEJhaGFzYSBJbmRvbmVzaWE8L3RleHQ+PC9zdmc+" alt="Savora Platform" class="img-fluid rounded-3 shadow">
                     </div>
                 </div>
             </div>
@@ -118,29 +145,62 @@
     <section class="search-section py-5 bg-light">
         <div class="container">
             <div class="row justify-content-center">
-                <div class="col-lg-8">
+                <div class="col-lg-10">
                     <div class="search-card">
-                        <form th:action="@{/}" method="get" class="row g-3">
-                            <div class="col-md-6">
+                        <div class="row g-3">
+                            <div class="col-md-6 position-relative">
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                    <input type="text" class="form-control" name="search" th:value="${search}" placeholder="Cari produk...">
+                                    <input type="text" id="searchInput" class="form-control" placeholder="Cari produk, judul, atau deskripsi..." value="" autocomplete="off">
+                                </div>
+                                <div id="searchSuggestions" class="suggestions-dropdown" style="display: none;">
+                                    <!-- Suggestions will be populated here -->
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <select class="form-select" name="category" th:value="${category}">
+                            <div class="col-md-4">
+                                <select class="form-select" id="categoryFilter">
                                     <option value="">Semua Kategori</option>
                                     <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-search me-2"></i>Cari
+                            <div class="col-md-2">
+                                <button type="button" id="resetFilters" class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-times me-2"></i>Reset
                                 </button>
                             </div>
-                        </form>
+                        </div>
+                        <div id="searchResultsInfo" class="mt-3 text-muted" style="display: none;">
+                            Menampilkan <span id="resultCount">0</span> hasil untuk "<span id="searchTerm"></span>"
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Results Section -->
+    <section id="searchResultsSection" class="py-5" style="display: none;">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="display-5 fw-bold text-gradient mb-3">Hasil Pencarian</h2>
+                    <p class="lead text-muted">Produk yang sesuai dengan kriteria pencarian Anda</p>
+                </div>
+            </div>
+            <div id="searchResultsContainer" class="row g-4">
+                <!-- Search results will be populated here -->
+            </div>
+            <div id="noResultsMessage" class="text-center py-5" style="display: none;">
+                <div class="empty-state">
+                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">Tidak ada hasil ditemukan</h4>
+                    <p class="text-muted">Coba ubah kata kunci pencarian atau filter kategori</p>
+                </div>
+            </div>
+            <div class="text-center mt-4" id="loadMoreContainer" style="display: none;">
+                <button id="loadMoreBtn" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Muat Lebih Banyak
+                </button>
             </div>
         </div>
     </section>
@@ -158,17 +218,42 @@
                 <div class="col-lg-3 col-md-6" th:each="category : ${categories}">
                     <div class="category-card">
                         <div class="category-icon">
-                            <i class="fas fa-utensils fa-3x text-primary"></i>
+                            <i th:attr="style=${#strings.toLowerCase(category.name).contains('organik') or #strings.toLowerCase(category.name).contains('organic') ? 'color: #28a745 !important;' :
+                                #strings.toLowerCase(category.name).contains('tekstil') or #strings.toLowerCase(category.name).contains('textile') ? 'color: #17a2b8 !important;' :
+                                #strings.toLowerCase(category.name).contains('makanan') or #strings.toLowerCase(category.name).contains('food') ? 'color: #ffc107 !important;' :
+                                #strings.toLowerCase(category.name).contains('minuman') or #strings.toLowerCase(category.name).contains('beverage') ? 'color: #007bff !important;' :
+                                #strings.toLowerCase(category.name).contains('bumbu') or #strings.toLowerCase(category.name).contains('rempah') or #strings.toLowerCase(category.name).contains('spice') ? 'color: #dc3545 !important;' :
+                                #strings.toLowerCase(category.name).contains('kemasan') or #strings.toLowerCase(category.name).contains('packaging') ? 'color: #6c757d !important;' :
+                                #strings.toLowerCase(category.name).contains('baking') or #strings.toLowerCase(category.name).contains('roti') ? 'color: #8B4513 !important;' :
+                                #strings.toLowerCase(category.name).contains('daging') or #strings.toLowerCase(category.name).contains('meat') ? 'color: #8B0000 !important;' :
+                                #strings.toLowerCase(category.name).contains('sayur') or #strings.toLowerCase(category.name).contains('vegetable') ? 'color: #228B22 !important;' :
+                                #strings.toLowerCase(category.name).contains('buah') or #strings.toLowerCase(category.name).contains('fruit') ? 'color: #FF6347 !important;' :
+                                #strings.toLowerCase(category.name).contains('susu') or #strings.toLowerCase(category.name).contains('dairy') ? 'color: #4682B4 !important;' :
+                                #strings.toLowerCase(category.name).contains('tepung') or #strings.toLowerCase(category.name).contains('flour') ? 'color: #D2B48C !important;' :
+                                'color: #007bff !important;'}"
+                               th:class="'fas fa-1x ' + ${#strings.toLowerCase(category.name).contains('organik') or #strings.toLowerCase(category.name).contains('organic') ? 'fa-leaf' :
+                                #strings.toLowerCase(category.name).contains('tekstil') or #strings.toLowerCase(category.name).contains('textile') ? 'fa-tshirt' :
+                                #strings.toLowerCase(category.name).contains('makanan') or #strings.toLowerCase(category.name).contains('food') ? 'fa-utensils' :
+                                #strings.toLowerCase(category.name).contains('minuman') or #strings.toLowerCase(category.name).contains('beverage') ? 'fa-glass-whiskey' :
+                                #strings.toLowerCase(category.name).contains('bumbu') or #strings.toLowerCase(category.name).contains('rempah') or #strings.toLowerCase(category.name).contains('spice') ? 'fa-pepper-hot' :
+                                #strings.toLowerCase(category.name).contains('kemasan') or #strings.toLowerCase(category.name).contains('packaging') ? 'fa-box-open' :
+                                #strings.toLowerCase(category.name).contains('baking') or #strings.toLowerCase(category.name).contains('roti') ? 'fa-birthday-cake' :
+                                #strings.toLowerCase(category.name).contains('daging') or #strings.toLowerCase(category.name).contains('meat') ? 'fa-drumstick-bite' :
+                                #strings.toLowerCase(category.name).contains('sayur') or #strings.toLowerCase(category.name).contains('vegetable') ? 'fa-carrot' :
+                                #strings.toLowerCase(category.name).contains('buah') or #strings.toLowerCase(category.name).contains('fruit') ? 'fa-apple-alt' :
+                                #strings.toLowerCase(category.name).contains('susu') or #strings.toLowerCase(category.name).contains('dairy') ? 'fa-cheese' :
+                                #strings.toLowerCase(category.name).contains('tepung') or #strings.toLowerCase(category.name).contains('flour') ? 'fa-bread-slice' :
+                                'fa-shopping-basket'}"></i>
                         </div>
                         <h5 class="card-title" th:text="${category.name}"></h5>
-                        <p class="card-text text-muted" th:text="${category.description}"></p>
-                        <a th:href="@{'/?category=' + ${category.id}}" class="btn btn-outline-primary">Lihat Produk</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Default Content Sections -->
+    <div id="defaultContentSections">
     <!-- Flash Sale Section -->
     <section class="flash-sale-section py-5 bg-primary">
         <div class="container">
@@ -405,6 +490,7 @@
             </div>
         </div>
     </section>
+    </div> <!-- End defaultContentSections -->
 
     <!-- Why Choose Us Section -->
     <section class="why-choose-us py-5">
@@ -687,7 +773,329 @@
         // Initialize cart count on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateCartCount();
+            initializeSearch();
         });
+
+        // Search functionality
+        let searchTimeout;
+        let suggestionTimeout;
+        let currentPage = 0;
+        let isSearching = false;
+        let selectedSuggestionIndex = -1;
+
+        function initializeSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const resetFilters = document.getElementById('resetFilters');
+
+            // Add event listeners
+            searchInput.addEventListener('input', handleSearchInput);
+            searchInput.addEventListener('keydown', handleSearchKeydown);
+            searchInput.addEventListener('blur', hideSuggestions);
+            categoryFilter.addEventListener('change', performSearch);
+            resetFilters.addEventListener('click', resetSearchFilters);
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target)) {
+                    hideSuggestions();
+                }
+            });
+        }
+
+        function handleSearchInput() {
+            const query = this.value.trim();
+            clearTimeout(searchTimeout);
+            clearTimeout(suggestionTimeout);
+
+            if (query.length >= 1) {
+                suggestionTimeout = setTimeout(() => fetchSuggestions(query), 150);
+            } else {
+                hideSuggestions();
+            }
+
+            searchTimeout = setTimeout(performSearch, 300); // Debounce 300ms
+        }
+
+        function handleSearchKeydown(e) {
+            const suggestions = document.getElementById('searchSuggestions');
+            const items = suggestions.querySelectorAll('.suggestion-item');
+
+            if (suggestions.style.display === 'none' || items.length === 0) return;
+
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, items.length - 1);
+                    updateSuggestionSelection(items);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                    updateSuggestionSelection(items);
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (selectedSuggestionIndex >= 0 && items[selectedSuggestionIndex]) {
+                        selectSuggestion(items[selectedSuggestionIndex].textContent);
+                    } else {
+                        performSearch();
+                    }
+                    break;
+                case 'Escape':
+                    hideSuggestions();
+                    selectedSuggestionIndex = -1;
+                    break;
+            }
+        }
+
+        function fetchSuggestions(query) {
+            const baseUrl = window.location.origin;
+            fetch(`${baseUrl}/api/search-suggestions?q=${encodeURIComponent(query)}&limit=8`)
+                .then(response => response.json())
+                .then(suggestions => {
+                    displaySuggestions(suggestions, query);
+                })
+                .catch(error => {
+                    console.error('Error fetching suggestions:', error);
+                });
+        }
+
+        function displaySuggestions(suggestions, query) {
+            const container = document.getElementById('searchSuggestions');
+            container.innerHTML = '';
+
+            if (suggestions.length > 0) {
+                suggestions.forEach((suggestion, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.textContent = suggestion;
+                    item.onclick = () => selectSuggestion(suggestion);
+                    item.onmouseenter = () => {
+                        selectedSuggestionIndex = index;
+                        updateSuggestionSelection(container.querySelectorAll('.suggestion-item'));
+                    };
+                    container.appendChild(item);
+                });
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function updateSuggestionSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedSuggestionIndex) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        function selectSuggestion(suggestion) {
+            document.getElementById('searchInput').value = suggestion;
+            hideSuggestions();
+            performSearch();
+        }
+
+        function hideSuggestions() {
+            document.getElementById('searchSuggestions').style.display = 'none';
+            selectedSuggestionIndex = -1;
+        }
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const categoryId = document.getElementById('categoryFilter').value;
+
+            // Show search results if there's a search term or category filter
+            if (searchTerm || categoryId) {
+                isSearching = true;
+                currentPage = 0;
+                fetchSearchResults(searchTerm, categoryId, currentPage, true);
+                showSearchResults();
+            } else {
+                isSearching = false;
+                showDefaultContent();
+            }
+        }
+
+        function fetchSearchResults(searchTerm, categoryId, page, resetResults = false) {
+            const baseUrl = window.location.origin;
+            const params = new URLSearchParams({
+                page: page,
+                size: 12
+            });
+
+            if (searchTerm) params.append('search', searchTerm);
+            if (categoryId) params.append('category', categoryId);
+
+            fetch(`${baseUrl}/api/search-products?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    renderSearchResults(data, resetResults);
+                    updateSearchInfo(searchTerm, categoryId, data.totalItems);
+                })
+                .catch(error => {
+                    console.error('Error fetching search results:', error);
+                    showToast('Terjadi kesalahan saat mencari produk', 'error');
+                });
+        }
+
+        function renderSearchResults(data, resetResults) {
+            const container = document.getElementById('searchResultsContainer');
+            const noResults = document.getElementById('noResultsMessage');
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+            if (resetResults) {
+                container.innerHTML = '';
+            }
+
+            if (data.hasContent) {
+                noResults.style.display = 'none';
+                data.products.forEach(product => {
+                    const productCard = createProductCard(product);
+                    container.appendChild(productCard);
+                });
+
+                // Show load more button if there are more pages
+                if (data.currentPage + 1 < data.totalPages) {
+                    loadMoreContainer.style.display = 'block';
+                    loadMoreBtn.onclick = () => loadMoreResults();
+                } else {
+                    loadMoreContainer.style.display = 'none';
+                }
+            } else {
+                noResults.style.display = 'block';
+                loadMoreContainer.style.display = 'none';
+            }
+        }
+
+        function createProductCard(product) {
+            const col = document.createElement('div');
+            col.className = 'col-lg-3 col-md-6';
+
+            const imageUrl = product.imageUrl || '/images/product-placeholder.jpg';
+            const priceFormatted = 'Rp ' + product.price.toLocaleString('id-ID');
+
+            // Check if user is authenticated (simplified check)
+            const isAuthenticated = document.querySelector('[sec\\:authorize="isAuthenticated()"]') !== null;
+
+            col.innerHTML = `
+                <div class="card product-card h-100 shadow-sm border-0">
+                    <div class="position-relative">
+                        <img src="${imageUrl}" alt="Product Image" class="card-img-top" style="height: 300px; object-fit: cover;">
+                        <div class="card-img-overlay d-flex justify-content-end p-2">
+                            <div class="d-flex gap-1" ${isAuthenticated ? '' : 'style="display: none;"'}>
+                                <button class="btn btn-sm btn-outline-light rounded-circle"
+                                        onclick="addToCart(event, ${product.id})"
+                                        title="Tambah ke Keranjang">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-light rounded-circle"
+                                        onclick="toggleFavorite(event, ${product.id})"
+                                        title="Tambah ke Favorit">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title fw-bold mb-2">${product.name}</h6>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="h6 text-primary fw-bold mb-0">${priceFormatted}</span>
+                                <small class="text-muted">per unit</small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <span class="${product.stock > 10 ? 'badge bg-success' : product.stock > 0 ? 'badge bg-warning' : 'badge bg-danger'}">
+                                        ${product.stock > 10 ? 'Stok Tersedia' : product.stock > 0 ? 'Stok Terbatas' : 'Habis'}
+                                    </span>
+                                </div>
+                                <div class="rating">
+                                    <small class="text-muted">
+                                        <i class="fas fa-star text-warning"></i>
+                                        <span>${product.averageRating ? product.averageRating.toFixed(1) : '0.0'}</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a class="btn btn-outline-primary flex-fill" href="/products/${product.id}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                    <i class="fas fa-eye me-1"></i>Detail
+                                </a>
+                                ${isAuthenticated && product.stock > 0 ? `
+                                <div class="btn-group w-100">
+                                    <button class="btn btn-primary flex-fill" onclick="buyNow(${product.id})" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                        <i class="fas fa-bolt me-1"></i>Beli
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="addToCart(event, ${product.id})" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </div>
+                                ` : isAuthenticated && product.stock == 0 ? `
+                                <span class="badge bg-secondary w-100">Stok Habis</span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <small class="text-muted">
+                            <i class="fas fa-store me-1"></i>
+                            <span>${product.supplierCompanyName}</span>
+                        </small>
+                    </div>
+                </div>
+            `;
+
+            return col;
+        }
+
+        function updateSearchInfo(searchTerm, categoryId, totalItems) {
+            const infoDiv = document.getElementById('searchResultsInfo');
+            const resultCount = document.getElementById('resultCount');
+            const searchTermSpan = document.getElementById('searchTerm');
+
+            if (searchTerm || categoryId) {
+                let term = searchTerm || 'semua produk';
+                if (categoryId) {
+                    const categorySelect = document.getElementById('categoryFilter');
+                    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                    term += ` dalam kategori ${selectedOption.text}`;
+                }
+                searchTermSpan.textContent = term;
+                resultCount.textContent = totalItems;
+                infoDiv.style.display = 'block';
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+
+        function loadMoreResults() {
+            currentPage++;
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const categoryId = document.getElementById('categoryFilter').value;
+            fetchSearchResults(searchTerm, categoryId, currentPage, false);
+        }
+
+        function resetSearchFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            isSearching = false;
+            showDefaultContent();
+        }
+
+        function showSearchResults() {
+            document.getElementById('defaultContentSections').style.display = 'none';
+            document.getElementById('searchResultsSection').style.display = 'block';
+        }
+
+        function showDefaultContent() {
+            document.getElementById('defaultContentSections').style.display = 'block';
+            document.getElementById('searchResultsSection').style.display = 'none';
+            document.getElementById('searchResultsInfo').style.display = 'none';
+        }
     </script>
 </body>
 </html>

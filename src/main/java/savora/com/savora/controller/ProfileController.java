@@ -83,10 +83,24 @@ public class ProfileController {
 
     @PostMapping("/edit")
     public String updateProfile(@ModelAttribute User updatedUser,
-                               @AuthenticationPrincipal UserDetails userDetails,
-                               RedirectAttributes redirectAttributes) {
+                                @AuthenticationPrincipal UserDetails userDetails,
+                                RedirectAttributes redirectAttributes) {
         try {
             User currentUser = userService.findByUsername(userDetails.getUsername()).orElseThrow();
+
+            // Validate bank account information if provided
+            if (updatedUser.getBankAccountName() != null && !updatedUser.getBankAccountName().trim().isEmpty()) {
+                if (updatedUser.getBankAccountName().trim().length() < 3) {
+                    throw new IllegalArgumentException("Nama pemilik rekening minimal 3 karakter");
+                }
+            }
+
+            if (updatedUser.getBankAccountNumber() != null && !updatedUser.getBankAccountNumber().trim().isEmpty()) {
+                String accountNumber = updatedUser.getBankAccountNumber().trim();
+                if (!accountNumber.matches("\\d{10,20}")) {
+                    throw new IllegalArgumentException("Nomor rekening harus berupa angka 10-20 digit");
+                }
+            }
 
             // Update only allowed fields
             currentUser.setCompanyName(updatedUser.getCompanyName());
@@ -94,11 +108,16 @@ public class ProfileController {
             currentUser.setAddress(updatedUser.getAddress());
             currentUser.setAvatarUrl(updatedUser.getAvatarUrl());
 
+            // Update bank account information
+            currentUser.setBankName(updatedUser.getBankName());
+            currentUser.setBankAccountName(updatedUser.getBankAccountName());
+            currentUser.setBankAccountNumber(updatedUser.getBankAccountNumber());
+
             // Note: Username and email changes would require additional validation
             // For now, we keep them as read-only
 
-            // Save updated user (assuming UserService has update method)
-            // userService.updateUser(currentUser);
+            // Save updated user
+            userService.updateUser(currentUser);
 
             redirectAttributes.addFlashAttribute("successMessage", "Profil berhasil diperbarui!");
             return "redirect:/profile";

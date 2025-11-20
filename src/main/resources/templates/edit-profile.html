@@ -175,6 +175,48 @@
                                     <textarea class="form-control" id="businessDescription" name="businessDescription" rows="3"
                                               placeholder="Jelaskan tentang bisnis Anda, produk utama, dan pengalaman..."></textarea>
                                 </div>
+
+                                <!-- Bank Account Information -->
+                                <div class="border-top pt-3 mt-3">
+                                    <h6 class="mb-3">Informasi Rekening Bank</h6>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="bankName" class="form-label">Nama Bank</label>
+                                            <select class="form-select" id="bankName" name="bankName">
+                                                <option value="">Pilih Bank</option>
+                                                <option value="BCA" th:selected="${user.bankName == 'BCA'}">BCA</option>
+                                                <option value="Mandiri" th:selected="${user.bankName == 'Mandiri'}">Mandiri</option>
+                                                <option value="BNI" th:selected="${user.bankName == 'BNI'}">BNI</option>
+                                                <option value="BRI" th:selected="${user.bankName == 'BRI'}">BRI</option>
+                                                <option value="CIMB Niaga" th:selected="${user.bankName == 'CIMB Niaga'}">CIMB Niaga</option>
+                                                <option value="Danamon" th:selected="${user.bankName == 'Danamon'}">Danamon</option>
+                                                <option value="Permata" th:selected="${user.bankName == 'Permata'}">Permata</option>
+                                                <option value="BSI" th:selected="${user.bankName == 'BSI'}">BSI</option>
+                                                <option value="OCBC NISP" th:selected="${user.bankName == 'OCBC NISP'}">OCBC NISP</option>
+                                                <option value="Maybank" th:selected="${user.bankName == 'Maybank'}">Maybank</option>
+                                                <option value="Panin" th:selected="${user.bankName == 'Panin'}">Panin</option>
+                                                <option value="UOB" th:selected="${user.bankName == 'UOB'}">UOB</option>
+                                                <option value="Lainnya" th:selected="${user.bankName == 'Lainnya'}">Lainnya</option>
+                                            </select>
+                                            <div class="form-text">Bank tempat rekening Anda</div>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label for="bankAccountName" class="form-label">Nama Pemilik Rekening <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="bankAccountName" name="bankAccountName"
+                                                   th:value="${user.bankAccountName}" placeholder="Nama sesuai rekening bank" required>
+                                            <div class="form-text">Nama lengkap pemilik rekening</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="bankAccountNumber" class="form-label">Nomor Rekening <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="bankAccountNumber" name="bankAccountNumber"
+                                               th:value="${user.bankAccountNumber}" placeholder="1234567890" pattern="[0-9]{10,20}" required>
+                                        <div class="form-text">Hanya angka, 10-20 digit</div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Preferences (for buyers) -->

@@ -144,7 +144,7 @@
                                                 <div class="bg-light p-3 rounded">
                                                     <strong>Bank: <span th:text="${detailOrder.supplier != null ? (detailOrder.supplier.bankName ?: 'Belum diatur') : 'Belum diatur'}"></span></strong><br>
                                                     <strong>No. Rekening: <span th:text="${detailOrder.supplier != null ? (detailOrder.supplier.bankAccountNumber ?: 'Belum diatur') : 'Belum diatur'}"></span></strong><br>
-                                                    <strong>Atas Nama: <span th:text="${detailOrder.supplier != null ? detailOrder.supplier.companyName : 'Belum diatur'}"></span></strong>
+                                                    <strong>Atas Nama: <span th:text="${detailOrder.supplier != null ? (detailOrder.supplier.bankAccountName ?: detailOrder.supplier.companyName) : 'Belum diatur'}"></span></strong>
                                                 </div>
                                                 <p class="mb-0 mt-2 text-muted">Setelah transfer, supplier akan mengkonfirmasi pembayaran dan memproses pengiriman.</p>
                                             </div>
