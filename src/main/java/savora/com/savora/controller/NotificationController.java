@@ -1,5 +1,6 @@
 package savora.com.savora.controller;
 
+import savora.com.savora.model.Notification;
 import savora.com.savora.model.User;
 import savora.com.savora.service.NotificationService;
 import savora.com.savora.service.UserService;
@@ -9,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 @RequestMapping("/notifications")
@@ -22,12 +25,29 @@ public class NotificationController {
 
     @GetMapping
     public String viewNotifications(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
-        if (user != null) {
-            model.addAttribute("notifications", notificationService.getUserNotifications(user));
-            model.addAttribute("unreadCount", notificationService.countUnreadNotifications(user));
+        try {
+            User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            if (user != null) {
+                java.util.List<Notification> notifications = notificationService.getUserNotifications(user);
+                long readCount = notifications.stream().filter(Notification::getIsRead).count();
+                model.addAttribute("notifications", notifications);
+                model.addAttribute("unreadCount", notificationService.countUnreadNotifications(user));
+                model.addAttribute("readCount", readCount);
+                model.addAttribute("userRole", user.getRole());
+            } else {
+                model.addAttribute("notifications", new java.util.ArrayList<>());
+                model.addAttribute("unreadCount", 0L);
+                model.addAttribute("readCount", 0L);
+            }
+            return "notifications";
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", "Terjadi kesalahan saat memuat notifikasi: " + e.getMessage());
+            model.addAttribute("notifications", new java.util.ArrayList<>());
+            model.addAttribute("unreadCount", 0L);
+            model.addAttribute("readCount", 0L);
+            return "notifications";
         }
-        return "notifications";
     }
 
     @PostMapping("/{id}/read")
@@ -37,6 +57,12 @@ public class NotificationController {
             return "redirect:/notifications";
         }
         return "redirect:/dashboard";
+    }
+
+    @PostMapping("/{id}/delete")
+    public String deleteNotification(@PathVariable Long id) {
+        notificationService.deleteNotification(id);
+        return "redirect:/notifications";
     }
 
     @PostMapping("/mark-all-read")
@@ -54,5 +80,13 @@ public class NotificationController {
     public Long getUnreadCount(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
         return user != null ? notificationService.countUnreadNotifications(user) : 0L;
+    }
+
+    // AJAX endpoint for latest notifications (for real-time updates)
+    @GetMapping("/latest")
+    @ResponseBody
+    public List<Notification> getLatestNotifications(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+        return user != null ? notificationService.getUserNotifications(user).stream().limit(10).toList() : new ArrayList<>();
     }
 }

@@ -1,0 +1,179 @@
+<!-- Delete Confirmation Modal -->
+<div th:fragment="deleteConfirmationModal">
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmationModalLabel">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                    </div>
+                    <p class="mb-2" id="deleteConfirmationMessage">Apakah Anda yakin ingin menghapus item ini?</p>
+                    <p class="text-muted small" id="deleteConfirmationDetails"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="deleteConfirmButton">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Script -->
+<script th:fragment="deleteConfirmationScript">
+    let currentDeleteCallback = null;
+    let currentSuccessMessage = '';
+
+    function showDeleteConfirmation(options) {
+        const {
+            title = 'Konfirmasi Hapus',
+            message = 'Apakah Anda yakin ingin menghapus item ini?',
+            details = '',
+            confirmText = 'Hapus',
+            onConfirm = null,
+            successMessage = 'Item berhasil dihapus'
+        } = options;
+
+        // Update modal content
+        document.getElementById('deleteConfirmationModalLabel').textContent = title;
+        document.getElementById('deleteConfirmationMessage').textContent = message;
+        document.getElementById('deleteConfirmationDetails').textContent = details;
+        document.getElementById('deleteConfirmButton').textContent = confirmText;
+
+        // Store callback and success message
+        currentDeleteCallback = onConfirm;
+        currentSuccessMessage = successMessage;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+        modal.show();
+    }
+
+    function showDeleteNotificationConfirmation(notificationId, title) {
+        showDeleteConfirmation({
+            title: 'Hapus Notifikasi',
+            message: `Apakah Anda yakin ingin menghapus notifikasi "${title}"?`,
+            details: 'Tindakan ini tidak dapat dibatalkan.',
+            confirmText: 'Hapus',
+            onConfirm: async () => {
+                const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+                const response = await fetch(`/notifications/${notificationId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `_csrf=${csrfToken}`
+                });
+
+                if (response.ok) {
+                    // Remove the notification item from DOM
+                    const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (notificationItem) {
+                        notificationItem.remove();
+                    }
+                    // Update counts if needed
+                    updateNotificationCounts();
+                    return { success: true };
+                } else {
+                    throw new Error('Gagal menghapus notifikasi');
+                }
+            },
+            successMessage: 'Notifikasi berhasil dihapus'
+        });
+    }
+
+    function updateNotificationCounts() {
+        const totalNotifications = document.querySelectorAll('.notification-item').length;
+        const readNotifications = document.querySelectorAll('.notification-item:not(.border-primary)').length;
+        const unreadNotifications = totalNotifications - readNotifications;
+
+        // Update stats if they exist
+        const totalStat = document.querySelector('.stats-number');
+        if (totalStat) {
+            totalStat.textContent = totalNotifications;
+        }
+
+        const readStat = document.querySelectorAll('.stats-number')[1];
+        if (readStat) {
+            readStat.textContent = readNotifications;
+        }
+
+        const unreadStat = document.querySelectorAll('.stats-number')[2];
+        if (unreadStat) {
+            unreadStat.textContent = unreadNotifications;
+        }
+
+        // Update badge
+        const badge = document.getElementById('unread-badge');
+        if (unreadNotifications > 0) {
+            if (badge) {
+                badge.textContent = unreadNotifications + ' belum dibaca';
+                badge.style.display = 'inline-block';
+            }
+        } else if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+
+    // Initialize modal event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmButton = document.getElementById('deleteConfirmButton');
+        if (confirmButton) {
+            confirmButton.addEventListener('click', async function() {
+                if (currentDeleteCallback) {
+                    try {
+                        const result = await currentDeleteCallback();
+                        if (result && result.success) {
+                            // Close modal
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmationModal'));
+                            modal.hide();
+
+                            // Show success message
+                            if (currentSuccessMessage) {
+                                showToast(currentSuccessMessage, 'success');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Delete operation failed:', error);
+                        showToast('Terjadi kesalahan saat menghapus item', 'error');
+                    }
+                }
+            });
+        }
+    });
+
+    function showToast(message, type = 'info') {
+        // Simple toast implementation - you can enhance this
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '1060';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        document.getElementById('toast-container').appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Remove toast after it's hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+</script>

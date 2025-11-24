@@ -23,7 +23,7 @@ public class Notification {
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private Type type = Type.INFO;
 
     @Column(nullable = false)
@@ -32,7 +32,14 @@ public class Notification {
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    // Additional fields for order details
+    private String orderId;
+    private String productName;
+    private Integer quantity;
+    private String actionUrl; // URL to order detail page
+    private String actionText; // Text for action button
+
     public enum Type {
-        INFO, SUCCESS, WARNING, ERROR, ORDER_UPDATE, PRODUCT_UPDATE
+        INFO, SUCCESS, WARNING, ERROR, ORDER_UPDATE, PRODUCT_UPDATE, PAYMENT_CONFIRMED, SHIPPING_UPDATE
     }
 }

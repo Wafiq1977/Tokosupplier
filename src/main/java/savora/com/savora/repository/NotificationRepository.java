@@ -12,8 +12,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByUserOrderByCreatedAtDesc(User user);
     List<Notification> findByUserAndIsReadOrderByCreatedAtDesc(User user, Boolean isRead);
 
-    @Query("SELECT COUNT(n) FROM Notification n WHERE n.user = :user AND n.isRead = false")
-    Long countUnreadByUser(@Param("user") User user);
+    Long countByUserAndIsRead(User user, Boolean isRead);
 
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.user = :user AND n.isRead = false")

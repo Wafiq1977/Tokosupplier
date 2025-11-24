@@ -84,6 +84,13 @@
                             <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
                         </a>
                     </li>
+                    <li class="nav-item me-2" sec:authorize="isAuthenticated()">
+                        <a class="nav-link position-relative" th:href="@{/notifications}">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  th:style="'display:' + (${unreadNotificationCount != null and unreadNotificationCount > 0} ? 'inline' : 'none') + ';'" th:text="${unreadNotificationCount}"></span>
+                        </a>
+                    </li>
                     <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
@@ -754,6 +761,19 @@
             .catch(error => console.error('Error updating cart count:', error));
         }
 
+        function updateNotificationCount() {
+            fetch('/notifications/count')
+            .then(response => response.json())
+            .then(count => {
+                const notificationBadge = document.getElementById('notification-count');
+                if (notificationBadge) {
+                    notificationBadge.textContent = count;
+                    notificationBadge.style.display = count > 0 ? 'inline' : 'none';
+                }
+            })
+            .catch(error => console.error('Error updating notification count:', error));
+        }
+
         function showToast(message, type) {
             const toast = document.createElement('div');
             toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
@@ -770,9 +790,10 @@
         }
 
 
-        // Initialize cart count on page load
+        // Initialize cart count and notification count on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateCartCount();
+            updateNotificationCount();
             initializeSearch();
         });
 

@@ -4,7 +4,12 @@ import savora.com.savora.model.Product;
 import savora.com.savora.model.Category;
 import savora.com.savora.service.ProductService;
 import savora.com.savora.service.CategoryService;
+import savora.com.savora.service.NotificationService;
+import savora.com.savora.service.UserService;
+import savora.com.savora.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -85,16 +90,23 @@ public class HomeController {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private UserService userService;
+
     @GetMapping("/")
     public String home(@RequestParam(value = "search", required = false) String search,
-                       @RequestParam(value = "category", required = false) Long categoryId,
-                       @RequestParam(value = "minPrice", required = false) Double minPrice,
-                       @RequestParam(value = "maxPrice", required = false) Double maxPrice,
-                       @RequestParam(value = "sort", defaultValue = "id") String sortBy,
-                       @RequestParam(value = "order", defaultValue = "desc") String sortDir,
-                       @RequestParam(value = "page", defaultValue = "0") int page,
-                       @RequestParam(value = "size", defaultValue = "20") int size,
-                       Model model) {
+                        @RequestParam(value = "category", required = false) Long categoryId,
+                        @RequestParam(value = "minPrice", required = false) Double minPrice,
+                        @RequestParam(value = "maxPrice", required = false) Double maxPrice,
+                        @RequestParam(value = "sort", defaultValue = "id") String sortBy,
+                        @RequestParam(value = "order", defaultValue = "desc") String sortDir,
+                        @RequestParam(value = "page", defaultValue = "0") int page,
+                        @RequestParam(value = "size", defaultValue = "20") int size,
+                        @AuthenticationPrincipal UserDetails userDetails,
+                        Model model) {
 
         Page<Product> productPage;
 
@@ -133,6 +145,15 @@ public class HomeController {
 
         // Always add categories for navigation
         model.addAttribute("categories", categoryService.getAllCategories());
+
+        // Add unread notification count for authenticated users
+        if (userDetails != null) {
+            User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            if (user != null) {
+                model.addAttribute("unreadNotificationCount", notificationService.countUnreadNotifications(user));
+            }
+        }
+
         return "home";
     }
 

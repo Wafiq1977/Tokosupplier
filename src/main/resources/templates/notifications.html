@@ -63,18 +63,36 @@
         </div>
     </nav>
 
+    <!-- Notification Banner/Popup -->
+    <div id="notification-banner" class="alert alert-info alert-dismissible fade show position-fixed"
+         style="top: 80px; right: 20px; z-index: 1050; display: none; max-width: 400px;">
+        <i class="fas fa-bell me-2"></i>
+        <strong>Notifikasi Baru!</strong>
+        <span id="banner-message"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
     <div class="container my-5">
+        <!-- Error Message -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Notifikasi</h1>
-            <div class="btn-group" role="group">
-                <input type="radio" class="btn-check" name="filter" id="all" autocomplete="off" checked>
-                <label class="btn btn-outline-primary btn-sm" for="all">Semua</label>
+            <div class="d-flex align-items-center">
+                <span id="unread-badge" class="badge bg-danger me-3" th:if="${unreadCount > 0}" th:text="${unreadCount + ' belum dibaca'}"></span>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="filter" id="all" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary btn-sm" for="all">Semua</label>
 
-                <input type="radio" class="btn-check" name="filter" id="unread" autocomplete="off">
-                <label class="btn btn-outline-warning btn-sm" for="unread">Belum Dibaca</label>
+                    <input type="radio" class="btn-check" name="filter" id="unread" autocomplete="off">
+                    <label class="btn btn-outline-warning btn-sm" for="unread">Belum Dibaca</label>
 
-                <input type="radio" class="btn-check" name="filter" id="read" autocomplete="off">
-                <label class="btn btn-outline-success btn-sm" for="read">Sudah Dibaca</label>
+                    <input type="radio" class="btn-check" name="filter" id="read" autocomplete="off">
+                    <label class="btn btn-outline-success btn-sm" for="read">Sudah Dibaca</label>
+                </div>
             </div>
         </div>
 
@@ -86,20 +104,25 @@
                     <i class="fas fa-check-double me-1"></i>Tandai Semua Sudah Dibaca
                 </button>
             </form>
+            <!-- Test Modal Button (for debugging) -->
+            <button type="button" class="btn btn-outline-info btn-sm ms-2" onclick="testModal()">
+                <i class="fas fa-vial me-1"></i>Test Modal
+            </button>
         </div>
 
         <!-- Notifications List -->
         <div th:if="${notifications != null and !notifications.isEmpty()}" class="row">
             <div class="col-12">
                 <div th:each="notification : ${notifications}" class="notification-item card mb-3"
-                     th:classappend="${notification.isRead} ? '' : 'border-primary'">
+                      th:classappend="${notification.isRead} ? '' : 'border-primary'"
+                      th:data-notification-id="${notification.id}">
                     <div class="card-body">
                         <div class="d-flex">
                             <div class="flex-shrink-0 me-3">
                                 <div th:classappend="${notification.isRead} ? 'bg-light' : 'bg-primary text-white'"
                                      class="notification-icon rounded-circle d-flex align-items-center justify-content-center"
                                      style="width: 50px; height: 50px;">
-                                    <i th:classappend="getNotificationIcon(${notification.type})" class="fas fa-2x"></i>
+                                    <i class="fas fa-bell fa-2x"></i>
                                 </div>
                             </div>
                             <div class="flex-grow-1">
@@ -112,21 +135,33 @@
                                 </div>
                                 <p class="card-text mb-3" th:text="${notification.message}"></p>
 
-                                <div class="notification-actions">
-                                    <a th:if="${notification.actionUrl}" th:href="${notification.actionUrl}"
-                                       class="btn btn-primary btn-sm me-2">
-                                        <i class="fas fa-external-link-alt me-1"></i>
-                                        <span th:text="${notification.actionText != null ? notification.actionText : 'Lihat Detail'}"></span>
-                                    </a>
-
-                                    <form th:if="${!notification.isRead}" th:action="@{'/notifications/' + ${notification.id} + '/read'}"
-                                          method="post" style="display: inline;">
-                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                            <i class="fas fa-check me-1"></i>Tandai Dibaca
-                                        </button>
-                                    </form>
+                                <!-- Order Details -->
+                                <div th:if="${notification.orderId}" class="order-details mb-3 p-2 bg-light rounded">
+                                    <small class="text-muted">
+                                        <strong>ID Pesanan:</strong> <span th:text="${notification.orderId}"></span><br>
+                                        <strong th:if="${notification.productName}">Produk:</strong> <span th:text="${notification.productName}"></span><br>
+                                        <strong th:if="${notification.quantity}">Jumlah:</strong> <span th:text="${notification.quantity}"></span>
+                                    </small>
                                 </div>
+
+                                <div class="notification-actions">
+                                     <form th:if="${!notification.isRead}" th:action="@{'/notifications/' + ${notification.id} + '/read'}"
+                                           method="post" style="display: inline;">
+                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                         <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                             <i class="fas fa-check me-1"></i>Tandai Dibaca
+                                         </button>
+                                     </form>
+
+                                     <form th:action="@{'/notifications/' + ${notification.id} + '/delete'}"
+                                           method="post" style="display: inline;"
+                                           id="delete-form-${notification.id}">
+                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                         <button type="submit" class="btn btn-outline-danger btn-sm">
+                                             <i class="fas fa-trash me-1"></i>Hapus
+                                         </button>
+                                     </form>
+                                 </div>
                             </div>
                         </div>
                     </div>
@@ -169,7 +204,7 @@
                                         <i class="fas fa-envelope-open text-success"></i>
                                     </div>
                                     <div class="stats-content">
-                                        <h3 class="stats-number" th:text="${notifications.stream().filter(n -> n.isRead).count()}"></h3>
+                                        <h3 class="stats-number" th:text="${readCount}"></h3>
                                         <p class="stats-label">Sudah Dibaca</p>
                                     </div>
                                 </div>
@@ -206,12 +241,15 @@
         </div>
     </footer>
 
+    <!-- Delete Confirmation Modal -->
+    <div th:replace="~{fragments/delete-confirmation-modal.html :: deleteConfirmationModal}"></div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script th:src="@{/js/main.js}"></script>
 
-    <script>
+    <script th:inline="javascript">
         // Filter functionality
         document.querySelectorAll('input[name="filter"]').forEach(radio => {
             radio.addEventListener('change', function() {
@@ -235,23 +273,169 @@
             });
         });
 
-        // Function to get notification icon based on type
-        function getNotificationIcon(type) {
-            switch(type) {
-                case 'ORDER':
-                    return 'fa-shopping-cart';
-                case 'PAYMENT':
-                    return 'fa-credit-card';
-                case 'SHIPPING':
-                    return 'fa-truck';
-                case 'REVIEW':
-                    return 'fa-star';
-                case 'SYSTEM':
-                    return 'fa-cog';
-                default:
-                    return 'fa-bell';
+
+        // Real-time notification polling
+        let lastNotificationCount = 0;
+        let lastNotificationTime = new Date();
+
+        function checkForNewNotifications() {
+            fetch('/notifications/count')
+                .then(response => response.json())
+                .then(count => {
+                    const badge = document.getElementById('unread-badge');
+                    if (count > 0) {
+                        if (badge) {
+                            badge.textContent = count + ' belum dibaca';
+                            badge.style.display = 'inline-block';
+                        } else {
+                            // Create badge if it doesn't exist
+                            const header = document.querySelector('.d-flex.align-items-center');
+                            const newBadge = document.createElement('span');
+                            newBadge.id = 'unread-badge';
+                            newBadge.className = 'badge bg-danger me-3';
+                            newBadge.textContent = count + ' belum dibaca';
+                            header.insertBefore(newBadge, header.querySelector('.btn-group'));
+                        }
+
+                        // Show banner if new notifications arrived
+                        if (count > lastNotificationCount) {
+                            showNotificationBanner('Anda memiliki ' + (count - lastNotificationCount) + ' notifikasi baru!');
+                        }
+                    } else if (badge) {
+                        badge.style.display = 'none';
+                    }
+                    lastNotificationCount = count;
+                })
+                .catch(error => console.error('Error checking notifications:', error));
+        }
+
+        function showNotificationBanner(message) {
+            const banner = document.getElementById('notification-banner');
+            const bannerMessage = document.getElementById('banner-message');
+            bannerMessage.textContent = message;
+            banner.style.display = 'block';
+            banner.classList.add('show');
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                banner.classList.remove('show');
+                setTimeout(() => banner.style.display = 'none', 150);
+            }, 5000);
+        }
+
+        // Check for new notifications every 30 seconds
+        setInterval(checkForNewNotifications, 30000);
+
+        // Initial check
+        setTimeout(checkForNewNotifications, 1000);
+
+        // Include delete confirmation script
+        <div th:replace="~{fragments/delete-confirmation-modal.html :: deleteConfirmationScript}"></div>
+
+        // Test function for modal
+        function testModal() {
+            console.log('Testing modal...');
+            if (typeof showDeleteConfirmation !== 'undefined') {
+                showDeleteConfirmation({
+                    title: 'Test Modal',
+                    message: 'This is a test of the delete confirmation modal. It should show with proper Bootstrap styling.',
+                    confirmText: 'Test Complete',
+                    onConfirm: async () => {
+                        console.log('Test modal confirmed');
+                        return { success: true };
+                    },
+                    successMessage: 'Modal test successful!'
+                });
+            } else {
+                console.error('showDeleteConfirmation function not found');
+                alert('Modal function not available. Check console for errors.');
             }
         }
+
+        // Notification-specific delete functions
+        function showBulkDeleteConfirmation() {
+            const unreadNotifications = document.querySelectorAll('.notification-item:not(.border-primary)');
+            if (unreadNotifications.length === 0) {
+                showDeleteConfirmation({
+                    title: 'Tidak Ada Notifikasi',
+                    message: 'Tidak ada notifikasi yang dapat dihapus.',
+                    confirmText: 'Tutup',
+                    onConfirm: () => ({ success: true })
+                });
+                return;
+            }
+
+            showDeleteConfirmation({
+                title: 'Hapus Semua Notifikasi Belum Dibaca',
+                message: `Apakah Anda yakin ingin menghapus ${unreadNotifications.length} notifikasi yang belum dibaca?`,
+                details: 'Tindakan ini tidak dapat dibatalkan.',
+                confirmText: 'Hapus Semua',
+                onConfirm: async () => {
+                    // Delete all unread notifications
+                    const deletePromises = Array.from(unreadNotifications).map(notification => {
+                        const notificationId = notification.getAttribute('data-notification-id');
+                        if (notificationId) {
+                            const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+                            return fetch(`/notifications/${notificationId}/delete`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `_csrf=${csrfToken}`
+                            });
+                        }
+                    }).filter(Boolean);
+
+                    const results = await Promise.allSettled(deletePromises);
+                    const successCount = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
+
+                    if (successCount > 0) {
+                        // Refresh the page to show updated notifications
+                        location.reload();
+                        return { success: true };
+                    } else {
+                        throw new Error('Gagal menghapus notifikasi');
+                    }
+                },
+                successMessage: 'Notifikasi berhasil dihapus'
+            });
+        }
+
+        // Update existing delete buttons to use the new dialog
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Setting up delete button event listeners...');
+            // Update individual delete buttons
+            document.querySelectorAll('form[action*="/delete"]').forEach(form => {
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('Delete button clicked');
+
+                        const notificationId = form.action.split('/').pop();
+                        const title = form.closest('.notification-item').querySelector('.card-title').textContent.trim();
+
+                        // Check if user wants to skip confirmation
+                        if (localStorage.getItem('skipDeleteNotificationConfirmation') === 'true') {
+                            console.log('Skipping confirmation dialog');
+                            form.submit();
+                            return;
+                        }
+
+                        // Check if modal is available
+                        if (typeof showDeleteNotificationConfirmation !== 'undefined') {
+                            console.log('Showing modal confirmation');
+                            showDeleteNotificationConfirmation(notificationId, title);
+                        } else {
+                            console.log('Modal not available, using browser confirm');
+                            if (confirm('Apakah Anda yakin ingin menghapus notifikasi "' + title + '"?')) {
+                                form.submit();
+                            }
+                        }
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>

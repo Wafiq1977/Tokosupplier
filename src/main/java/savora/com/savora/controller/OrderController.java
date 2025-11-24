@@ -6,6 +6,7 @@ import savora.com.savora.model.OrderItem;
 import savora.com.savora.model.Product;
 import savora.com.savora.model.User;
 import savora.com.savora.service.CartService;
+import savora.com.savora.service.NotificationService;
 import savora.com.savora.service.OrderService;
 import savora.com.savora.service.ProductService;
 import savora.com.savora.service.UserService;
@@ -35,6 +36,9 @@ public class OrderController {
 
     @Autowired
     private CartService cartService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @PostMapping("/create")
     public String createOrder(@RequestParam Long productId,
@@ -217,7 +221,14 @@ public class OrderController {
         try {
             Order order = orderService.getOrderById(id).orElseThrow(() -> new RuntimeException("Order not found"));
             order.setPaymentStatus(paymentStatus);
-            orderService.updateOrder(order);
+            Order updatedOrder = orderService.updateOrder(order);
+
+            // Send notification if payment is approved
+            if (paymentStatus == Order.PaymentStatus.PAID) {
+                notificationService.notifyPaymentApproved(updatedOrder.getBuyer(),
+                    updatedOrder.getId().toString(), updatedOrder.getTotalAmount().doubleValue());
+            }
+
             redirectAttributes.addFlashAttribute("successMessage", "Status pembayaran berhasil diperbarui!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Gagal memperbarui status pembayaran: " + e.getMessage());
@@ -239,7 +250,12 @@ public class OrderController {
 
             order.setPaymentStatus(Order.PaymentStatus.PAID);
             order.setStatus(Order.Status.CONFIRMED);
-            orderService.updateOrder(order);
+            Order updatedOrder = orderService.updateOrder(order);
+
+            // Send payment confirmation notification
+            notificationService.notifyPaymentConfirmed(updatedOrder.getBuyer(), updatedOrder.getSupplier(),
+                updatedOrder.getId().toString(), updatedOrder.getTotalAmount().doubleValue(),
+                updatedOrder.getPaymentMethod().name());
 
             redirectAttributes.addFlashAttribute("successMessage", "Pembayaran berhasil dikonfirmasi! Pesanan Anda sedang diproses.");
             return "redirect:/buyer/orders";

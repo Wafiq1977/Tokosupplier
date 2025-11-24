@@ -4,6 +4,7 @@ import savora.com.savora.model.Order;
 import savora.com.savora.model.OrderItem;
 import savora.com.savora.model.User;
 import savora.com.savora.repository.OrderRepository;
+import savora.com.savora.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,9 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public List<Order> getOrdersByBuyer(User buyer) {
         return orderRepository.findByBuyer(buyer);
@@ -69,7 +73,16 @@ public class OrderService {
             item.setOrder(order);
         }
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // Send notification for new order
+        if (!items.isEmpty()) {
+            String productName = items.get(0).getProduct().getName();
+            int quantity = items.get(0).getQuantity();
+            notificationService.notifyOrderCreated(buyer, supplier, savedOrder.getId().toString(), productName, quantity);
+        }
+
+        return savedOrder;
     }
 
     @Transactional
@@ -80,8 +93,20 @@ public class OrderService {
     @Transactional
     public void updateOrderStatus(Long orderId, Order.Status status) {
         Order order = orderRepository.findById(orderId).orElseThrow();
+        Order.Status oldStatus = order.getStatus();
         order.setStatus(status);
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // Send notifications based on status change
+        if (status == Order.Status.CONFIRMED && oldStatus != Order.Status.CONFIRMED) {
+            // Notify buyer that order is confirmed
+            notificationService.notifyOrderConfirmed(savedOrder.getBuyer(), savedOrder.getId().toString(), "2-3 hari kerja");
+        } else if (status == Order.Status.SHIPPED && oldStatus != Order.Status.SHIPPED) {
+            // Notify buyer that order is shipped
+            notificationService.notifyOrderShipped(savedOrder.getBuyer(), savedOrder.getId().toString(),
+                savedOrder.getTrackingNumber() != null ? savedOrder.getTrackingNumber() : "TBA",
+                "3-5 hari kerja");
+        }
     }
 
     public List<Order> getOrdersByBuyerAndStatus(User buyer, Order.Status status) {
