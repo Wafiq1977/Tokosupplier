@@ -212,6 +212,7 @@ public class CartController {
         return "redirect:/cart";
     }
 
+
     @PostMapping("/clear")
     public String clearCart(@AuthenticationPrincipal UserDetails userDetails,
                            RedirectAttributes redirectAttributes) {
@@ -246,4 +247,5 @@ public class CartController {
         }
         return java.util.Map.of("count", count);
     }
+
 }
