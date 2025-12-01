@@ -1,12 +1,6 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
-COPY .mvn/ .mvn
-COPY mvnw .
-COPY pom.xml .
-RUN ./mvnw dependency:go-offline
-
-COPY src ./src
-RUN ./mvnw package -DskipTests
-
+COPY . .
+RUN ./mvnw -DskipTests package
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "target/*.jar"]
+CMD ["java", "-jar", "target/*.jar"]
