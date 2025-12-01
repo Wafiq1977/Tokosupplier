@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findBySupplier(User supplier);
+    List<Product> findBySupplierOrderByIdAsc(User supplier);
     List<Product> findByCategoryId(Long categoryId);
 
     @Query("SELECT p FROM Product p WHERE p.name LIKE %:keyword% OR p.description LIKE %:keyword%")
@@ -43,4 +44,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // Product name suggestions for autocomplete
     @Query("SELECT DISTINCT p.name FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) ORDER BY p.name ASC")
     List<String> findProductNameSuggestionsLimited(String query, org.springframework.data.domain.Pageable pageable);
+
+    // Find maximum supplier product ID for a supplier
+    @Query("SELECT MAX(p.supplierProductId) FROM Product p WHERE p.supplier = :supplier")
+    Integer findMaxSupplierProductIdBySupplier(User supplier);
+
+    // Find products without supplier product ID
+    List<Product> findBySupplierProductIdIsNull();
 }

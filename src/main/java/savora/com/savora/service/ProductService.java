@@ -9,8 +9,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -22,6 +25,20 @@ public class ProductService {
     private NotificationService notificationService;
 
     public Product saveProduct(Product product) {
+        // Ensure supplierProductId is set for existing products that don't have it
+        if (product.getId() != null && product.getSupplierProductId() == null) {
+            // For existing products without supplierProductId, assign based on creation order
+            List<Product> supplierProducts = productRepository.findBySupplierOrderByIdAsc(product.getSupplier());
+            int sequence = 1;
+            for (Product p : supplierProducts) {
+                if (p.getId().equals(product.getId())) {
+                    break;
+                }
+                sequence++;
+            }
+            product.setSupplierProductId(sequence);
+        }
+
         Product savedProduct = productRepository.save(product);
 
         // Send notification to supplier about new product
@@ -109,5 +126,32 @@ public class ProductService {
     public List<String> getProductNameSuggestions(String query, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return productRepository.findProductNameSuggestionsLimited(query, pageable);
+    }
+
+    // Get next supplier product ID (sequential per supplier)
+    public Integer getNextSupplierProductId(User supplier) {
+        Integer maxId = productRepository.findMaxSupplierProductIdBySupplier(supplier);
+        return maxId != null ? maxId + 1 : 1;
+    }
+
+    // Initialize supplier product IDs for existing products that don't have them
+    public void initializeSupplierProductIds() {
+        List<Product> productsWithoutIds = productRepository.findBySupplierProductIdIsNull();
+        Map<User, List<Product>> productsBySupplier = productsWithoutIds.stream()
+            .collect(Collectors.groupingBy(Product::getSupplier));
+
+        for (Map.Entry<User, List<Product>> entry : productsBySupplier.entrySet()) {
+            User supplier = entry.getKey();
+            List<Product> supplierProducts = entry.getValue();
+
+            // Sort by creation date to maintain order
+            supplierProducts.sort(Comparator.comparing(Product::getCreatedAt));
+
+            int sequence = 1;
+            for (Product product : supplierProducts) {
+                product.setSupplierProductId(sequence++);
+                productRepository.save(product);
+            }
+        }
     }
 }

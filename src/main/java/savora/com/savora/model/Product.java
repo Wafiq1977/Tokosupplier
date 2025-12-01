@@ -45,6 +45,9 @@ public class Product {
     @JoinColumn(name = "supplier_id", nullable = false)
     private User supplier;
 
+    @Column(name = "supplier_product_id")
+    private Integer supplierProductId;
+
     @NotNull(message = "Kategori produk tidak boleh kosong")
     @ManyToOne
     @JoinColumn(name = "category_id")

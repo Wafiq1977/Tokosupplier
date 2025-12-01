@@ -109,7 +109,17 @@ public class OrderController {
                               Model model) {
         User buyer = userService.findByUsername(userDetails.getUsername()).orElse(null);
         if (buyer != null) {
-            model.addAttribute("orders", orderService.getOrdersByBuyer(buyer));
+            List<Order> orders = orderService.getOrdersByBuyer(buyer);
+
+            // Add sequential order IDs for display
+            java.util.Map<Long, Integer> sequentialOrderIds = new java.util.HashMap<>();
+            for (Order order : orders) {
+                Integer sequentialId = orderService.getSequentialOrderIdForBuyer(order, buyer);
+                sequentialOrderIds.put(order.getId(), sequentialId);
+            }
+
+            model.addAttribute("orders", orders);
+            model.addAttribute("sequentialOrderIds", sequentialOrderIds);
             model.addAttribute("highlightOrderId", highlight);
 
             // If showDetail parameter is provided, get the specific order details
@@ -136,8 +146,18 @@ public class OrderController {
                 throw new RuntimeException("Unauthorized access to order");
             }
 
+            List<Order> orders = orderService.getOrdersByBuyer(buyer);
+
+            // Add sequential order IDs for display
+            java.util.Map<Long, Integer> sequentialOrderIds = new java.util.HashMap<>();
+            for (Order o : orders) {
+                Integer sequentialId = orderService.getSequentialOrderIdForBuyer(o, buyer);
+                sequentialOrderIds.put(o.getId(), sequentialId);
+            }
+
             model.addAttribute("detailOrder", order);
-            model.addAttribute("orders", orderService.getOrdersByBuyer(buyer));
+            model.addAttribute("orders", orders);
+            model.addAttribute("sequentialOrderIds", sequentialOrderIds);
             return "buyer/orders";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengambil detail pesanan: " + e.getMessage());
@@ -150,7 +170,17 @@ public class OrderController {
     public String supplierOrders(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User supplier = userService.findByUsername(userDetails.getUsername()).orElse(null);
         if (supplier != null) {
-            model.addAttribute("orders", orderService.getOrdersBySupplier(supplier));
+            List<Order> orders = orderService.getOrdersBySupplier(supplier);
+
+            // Add sequential order IDs for display
+            java.util.Map<Long, Integer> sequentialOrderIds = new java.util.HashMap<>();
+            for (Order order : orders) {
+                Integer sequentialId = orderService.getSequentialOrderIdForSupplier(order, supplier);
+                sequentialOrderIds.put(order.getId(), sequentialId);
+            }
+
+            model.addAttribute("orders", orders);
+            model.addAttribute("sequentialOrderIds", sequentialOrderIds);
         }
         return "supplier/orders";
     }
@@ -168,8 +198,18 @@ public class OrderController {
                 throw new RuntimeException("Unauthorized access to order");
             }
 
+            List<Order> orders = orderService.getOrdersBySupplier(supplier);
+
+            // Add sequential order IDs for display
+            java.util.Map<Long, Integer> sequentialOrderIds = new java.util.HashMap<>();
+            for (Order o : orders) {
+                Integer sequentialId = orderService.getSequentialOrderIdForSupplier(o, supplier);
+                sequentialOrderIds.put(o.getId(), sequentialId);
+            }
+
             model.addAttribute("detailOrder", order);
-            model.addAttribute("orders", orderService.getOrdersBySupplier(supplier));
+            model.addAttribute("orders", orders);
+            model.addAttribute("sequentialOrderIds", sequentialOrderIds);
             return "supplier/order-detail";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Gagal mengambil detail pesanan: " + e.getMessage());

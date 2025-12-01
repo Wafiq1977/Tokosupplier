@@ -183,12 +183,12 @@
                                 <tbody>
                                     <tr th:each="order : ${orders}" th:classappend="${highlightOrderId != null and highlightOrderId == order.id} ? 'table-success' : ''">
                                         <td>
-                                            <strong th:text="'#' + ${order.id}"></strong>
+                                            <strong th:text="${sequentialOrderIds.get(order.id)}"></strong>
                                         </td>
                                         <td th:text="${order.orderItems[0].product.supplier.companyName}"></td>
                                         <td>
                                             <div th:each="item, iterStat : ${order.orderItems}" class="mb-1">
-                                                <small th:text="${item.product.name + ' (' + item.quantity + ' ' + item.product.unit + ')'}"></small>
+                                                <small th:text="'ID ' + ${item.product.supplierProductId} + ' - ' + ${item.product.name + ' (' + item.quantity + ' ' + item.product.unit + ')'}"></small>
                                                 <span th:if="${!iterStat.last}" class="text-muted">+</span>
                                             </div>
                                         </td>

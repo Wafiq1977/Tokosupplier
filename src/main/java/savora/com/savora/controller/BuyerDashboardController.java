@@ -84,7 +84,16 @@ public class BuyerDashboardController {
         }
 
         List<Order> orders = orderService.getOrdersByBuyer(buyer);
+
+        // Add sequential order IDs for display
+        java.util.Map<Long, Integer> sequentialOrderIds = new java.util.HashMap<>();
+        for (Order order : orders) {
+            Integer sequentialId = orderService.getSequentialOrderIdForBuyer(order, buyer);
+            sequentialOrderIds.put(order.getId(), sequentialId);
+        }
+
         model.addAttribute("orders", orders);
+        model.addAttribute("sequentialOrderIds", sequentialOrderIds);
 
         return "buyer/orders";
     }

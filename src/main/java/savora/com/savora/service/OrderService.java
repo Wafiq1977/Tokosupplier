@@ -2,9 +2,11 @@ package savora.com.savora.service;
 
 import savora.com.savora.model.Order;
 import savora.com.savora.model.OrderItem;
+import savora.com.savora.model.Product;
 import savora.com.savora.model.User;
 import savora.com.savora.repository.OrderRepository;
 import savora.com.savora.service.NotificationService;
+import savora.com.savora.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,9 @@ public class OrderService {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private ProductService productService;
 
     public List<Order> getOrdersByBuyer(User buyer) {
         return orderRepository.findByBuyer(buyer);
@@ -55,6 +60,16 @@ public class OrderService {
             }
         }
 
+        // Validate stock availability and reserve stock
+        for (OrderItem item : items) {
+            Product product = item.getProduct();
+            Integer currentStock = product.getStockQuantity();
+            if (currentStock == null || currentStock < item.getQuantity()) {
+                throw new RuntimeException("Stok produk '" + product.getName() + "' tidak mencukupi. Stok tersedia: " +
+                    (currentStock != null ? currentStock : 0) + ", diminta: " + item.getQuantity());
+            }
+        }
+
         // Calculate total amount
         java.math.BigDecimal totalAmount = java.math.BigDecimal.ZERO;
         for (OrderItem item : items) {
@@ -74,6 +89,18 @@ public class OrderService {
         }
 
         Order savedOrder = orderRepository.save(order);
+
+        // Reduce stock for each product after successful order creation
+        for (OrderItem item : items) {
+            Product product = item.getProduct();
+            Integer currentStock = product.getStockQuantity();
+            if (currentStock != null) {
+                int newStock = currentStock - item.getQuantity();
+                product.setStockQuantity(newStock);
+                productService.saveProduct(product);
+                System.out.println("Stock reduced for product " + product.getName() + ": " + currentStock + " -> " + newStock);
+            }
+        }
 
         // Send notification for new order
         if (!items.isEmpty()) {
@@ -136,5 +163,31 @@ public class OrderService {
         }
 
         orderRepository.delete(order);
+    }
+
+    // Get sequential order ID for buyer (1, 2, 3, etc. based on their orders)
+    public Integer getSequentialOrderIdForBuyer(Order order, User buyer) {
+        List<Order> buyerOrders = orderRepository.findByBuyer(buyer);
+        buyerOrders.sort((o1, o2) -> o1.getCreatedAt().compareTo(o2.getCreatedAt()));
+
+        for (int i = 0; i < buyerOrders.size(); i++) {
+            if (buyerOrders.get(i).getId().equals(order.getId())) {
+                return i + 1; // Start from 1
+            }
+        }
+        return null;
+    }
+
+    // Get sequential order ID for supplier (1, 2, 3, etc. based on orders received)
+    public Integer getSequentialOrderIdForSupplier(Order order, User supplier) {
+        List<Order> supplierOrders = orderRepository.findBySupplier(supplier);
+        supplierOrders.sort((o1, o2) -> o1.getCreatedAt().compareTo(o2.getCreatedAt()));
+
+        for (int i = 0; i < supplierOrders.size(); i++) {
+            if (supplierOrders.get(i).getId().equals(order.getId())) {
+                return i + 1; // Start from 1
+            }
+        }
+        return null;
     }
 }

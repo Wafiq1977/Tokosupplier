@@ -240,6 +240,10 @@ public class ProductController {
                 product.setStockQuantity(product.getStock());
             }
 
+            // Generate supplier product ID (sequential per supplier)
+            Integer nextSupplierProductId = productService.getNextSupplierProductId(supplier);
+            product.setSupplierProductId(nextSupplierProductId);
+
             // Handle file upload
             if (imageFile != null && !imageFile.isEmpty()) {
                 if (fileUploadService.isValidImageFile(imageFile)) {

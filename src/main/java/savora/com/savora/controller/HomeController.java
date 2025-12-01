@@ -98,15 +98,23 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(@RequestParam(value = "search", required = false) String search,
-                        @RequestParam(value = "category", required = false) Long categoryId,
-                        @RequestParam(value = "minPrice", required = false) Double minPrice,
-                        @RequestParam(value = "maxPrice", required = false) Double maxPrice,
-                        @RequestParam(value = "sort", defaultValue = "id") String sortBy,
-                        @RequestParam(value = "order", defaultValue = "desc") String sortDir,
-                        @RequestParam(value = "page", defaultValue = "0") int page,
-                        @RequestParam(value = "size", defaultValue = "20") int size,
-                        @AuthenticationPrincipal UserDetails userDetails,
-                        Model model) {
+                         @RequestParam(value = "category", required = false) Long categoryId,
+                         @RequestParam(value = "minPrice", required = false) Double minPrice,
+                         @RequestParam(value = "maxPrice", required = false) Double maxPrice,
+                         @RequestParam(value = "sort", defaultValue = "id") String sortBy,
+                         @RequestParam(value = "order", defaultValue = "desc") String sortDir,
+                         @RequestParam(value = "page", defaultValue = "0") int page,
+                         @RequestParam(value = "size", defaultValue = "20") int size,
+                         @AuthenticationPrincipal UserDetails userDetails,
+                         Model model) {
+
+        // Initialize supplier product IDs for existing products (one-time operation)
+        try {
+            productService.initializeSupplierProductIds();
+        } catch (Exception e) {
+            // Log error but don't fail the request
+            System.err.println("Error initializing supplier product IDs: " + e.getMessage());
+        }
 
         Page<Product> productPage;
 
@@ -187,6 +195,11 @@ public class HomeController {
 
         List<String> suggestions = productService.getProductNameSuggestions(query.trim(), limit);
         return ResponseEntity.ok(suggestions);
+    }
+
+    @GetMapping("/about")
+    public String about(Model model) {
+        return "about";
     }
 
     // Login and register mappings moved to AuthController
