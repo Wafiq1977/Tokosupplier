@@ -9,4 +9,5 @@ RUN ./mvnw -DskipTests package
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "target/*.jar"]
+CMD ["java", "-jar", "target/savora-0.0.1-SNAPSHOT.jar"]
+
