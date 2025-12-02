@@ -27,6 +27,11 @@ public class FileUploadConfig implements WebMvcConfigurer {
     // the local folder <uploadBase>/products/ under the URL path /images/products/**
     registry.addResourceHandler("/images/products/**")
         .addResourceLocations("file:" + base + "products/");
+
+    // Mapping for uploaded avatar images. This exposes files stored in
+    // the local folder <uploadBase>/avatars/ under the URL path /images/avatars/**
+    registry.addResourceHandler("/images/avatars/**")
+        .addResourceLocations("file:" + base + "avatars/");
     }
 
     @Bean

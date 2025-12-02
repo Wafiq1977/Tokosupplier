@@ -15,9 +15,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +208,35 @@ public class HomeController {
     @GetMapping("/about")
     public String about(Model model) {
         return "about";
+    }
+
+    @GetMapping("/images/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
+        try {
+            Path imagePath = Paths.get("src/main/resources/static/images", filename);
+            Resource resource = new UrlResource(imagePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                // Determine content type based on file extension
+                String contentType = "image/jpeg"; // default
+                if (filename.toLowerCase().endsWith(".png")) {
+                    contentType = "image/png";
+                } else if (filename.toLowerCase().endsWith(".gif")) {
+                    contentType = "image/gif";
+                } else if (filename.toLowerCase().endsWith(".webp")) {
+                    contentType = "image/webp";
+                }
+
+                return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // Login and register mappings moved to AuthController
